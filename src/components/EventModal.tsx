@@ -26,6 +26,8 @@ export const EventModal: React.FC<EventModalProps> = ({ event, onClose }) => {
   const status = calculateEventStatus(event);
   const formattedDates = formatDateRange(event.startDate, event.endDate, event.timeText);
 
+  const reportUrl = `https://github.com/utkarshnikhare/art-gallery-live/issues/new?title=${encodeURIComponent(`[Event Correction] ${event.title}`)}&body=${encodeURIComponent(`Event ID: ${event.id}\nVenue: ${event.venueName}\nOfficial URL: ${event.officialUrl}\n\nPlease specify the updated dates, status, or fee:`)}`;
+
   return (
     <div
       className="modal-backdrop"
@@ -64,7 +66,7 @@ export const EventModal: React.FC<EventModalProps> = ({ event, onClose }) => {
         <div className="modal-body">
           <div className="modal-detail-row">
             <strong>🏛️ Organiser / Institution:</strong>
-            <span>{event.organiser || 'Official Organiser'}</span>
+            <span>{event.organiser || 'Official Host'}</span>
           </div>
 
           <div className="modal-detail-row">
@@ -75,31 +77,37 @@ export const EventModal: React.FC<EventModalProps> = ({ event, onClose }) => {
           </div>
 
           <div className="modal-detail-row">
-            <strong>📅 Dates & Timing:</strong>
+            <strong>📅 Dates & Hours:</strong>
             <span>{formattedDates}</span>
           </div>
 
           <div className="modal-detail-row">
             <strong>🎟️ Admission:</strong>
             <span>
-              {event.entryFee.type === 'free'
-                ? 'Free Public Admission'
+              {event.entryFee.type === 'free' && event.entryFee.isConfirmedByOrganiser
+                ? 'Confirmed Free Public Admission'
                 : event.entryFee.type === 'price'
                 ? event.entryFee.amountText || 'Ticket required'
-                : 'Fee not published / Check official organiser page'}
+                : 'Fee not published on public portal — check with organiser before visiting'}
             </span>
           </div>
 
           <div className="modal-detail-row">
-            <strong>🔍 Source Verification:</strong>
+            <strong>🔍 Verification Evidence:</strong>
             <span>
-              {event.sourceName} ({event.sourceType === 'official' ? 'Official Primary Source' : 'Secondary Listing'}) — Checked: {new Date(event.lastCheckedAt).toLocaleDateString()}
+              Verified by {event.sourceName} on {new Date(event.lastVerifiedAt).toLocaleString()}
             </span>
+            <div className="verified-fields-strip" style={{ marginTop: '4px' }}>
+              <span className="field-label">Verified Fields:</span>
+              {event.verifiedFields?.map(f => (
+                <span key={f} className="field-tag">✓ {f}</span>
+              ))}
+            </div>
           </div>
 
           {event.description && (
             <div className="modal-description-box">
-              <h4>About this exhibition</h4>
+              <h4>Curatorial Statement & Notes</h4>
               <p>{event.description}</p>
             </div>
           )}
@@ -118,7 +126,7 @@ export const EventModal: React.FC<EventModalProps> = ({ event, onClose }) => {
             rel="noopener noreferrer"
             className="btn btn-primary"
           >
-            Visit Official Source Page ↗
+            Open Official Announcement ↗
           </a>
 
           {event.bookingUrl && (
@@ -128,9 +136,18 @@ export const EventModal: React.FC<EventModalProps> = ({ event, onClose }) => {
               rel="noopener noreferrer"
               className="btn btn-accent"
             >
-              Book / Register Tickets ↗
+              Book Tickets ↗
             </a>
           )}
+
+          <a
+            href={reportUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-secondary"
+          >
+            🚩 Report Correction
+          </a>
 
           <button type="button" className="btn btn-outline" onClick={onClose}>
             Close

@@ -8,6 +8,7 @@ export const DEFAULT_FILTERS: FilterState = {
   timeRange: 'all',
   fee: 'all',
   format: 'all',
+  verificationLevel: 'all',
 };
 
 /**
@@ -68,7 +69,7 @@ export function filterEvents(events: ArtEvent[], filters: FilterState, nowMs = D
       if (status !== 'upcoming') return false;
     }
 
-    // Exclude past events from default view (unless specifically requested or status is ongoing/upcoming)
+    // Exclude past events from default view
     if (status === 'past') {
       return false;
     }
@@ -83,6 +84,15 @@ export function filterEvents(events: ArtEvent[], filters: FilterState, nowMs = D
     // 6. Format
     if (filters.format !== 'all') {
       if (event.format !== filters.format) return false;
+    }
+
+    // 7. Verification Level
+    if (filters.verificationLevel === 'official-event-verified') {
+      if (event.verificationStatus !== 'official-event-verified' && event.verificationStatus !== 'official-checked') {
+        return false;
+      }
+    } else if (filters.verificationLevel === 'has-booking') {
+      if (!event.bookingUrl) return false;
     }
 
     return true;

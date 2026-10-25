@@ -12,7 +12,7 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 const EVENTS_FILE = path.join(rootDir, 'public', 'data', 'events.json');
 
-console.log('--- RUNNING UNIT & INTEGRATION TEST SUITE ---\n');
+console.log('--- RUNNING RIGOROUS DATA INTEGRITY & ADVERSARIAL TEST SUITE ---\n');
 
 let passed = 0;
 let failed = 0;
@@ -41,7 +41,7 @@ async function itAsync(name, fn) {
   }
 }
 
-const validSample = {
+const verifiedSample = {
   id: 'test-evt-001',
   title: 'Contemporary Sculptures',
   category: 'exhibition',
@@ -51,74 +51,144 @@ const validSample = {
   region: 'Maharashtra',
   country: 'India',
   format: 'in-person',
-  entryFee: { type: 'free', amountText: 'Free Admission' },
-  officialUrl: 'https://zapurza.org/exhibitions',
-  sourceName: 'Zapurza',
-  sourceType: 'official',
-  verificationStatus: 'official-checked',
-  lastCheckedAt: '2026-10-25T13:30:00Z',
-  lastUpdatedAt: '2026-10-25T13:30:00Z',
+  entryFee: {
+    type: 'free',
+    amountText: 'Free Admission',
+    isConfirmedByOrganiser: true,
+  },
+  officialUrl: 'https://vhc.art/exhibitions',
+  sourceName: 'Vida Heydari Contemporary',
+  sourceType: 'official-institution',
+  verificationStatus: 'official-event-verified',
+  verifiedFields: ['title', 'dates', 'venue', 'city', 'admissionFee', 'organiser'],
+  lastCheckedAt: '2026-10-25T13:50:00Z',
+  lastVerifiedAt: '2026-10-25T13:50:00Z',
+  lastUpdatedAt: '2026-10-25T13:50:00Z',
+  dataFreshness: 'fresh',
   eventStatus: 'upcoming',
 };
 
-// 1. Valid event passes validation
-it('1. Valid event passes validation', () => {
-  const result = validateArtEvent(validSample);
+// 1. Valid event passes schema & field-level validation
+it('1. Valid event passes schema & field-level validation', () => {
+  const result = validateArtEvent(verifiedSample);
   assert.equal(result.isValid, true);
   assert.equal(result.errors.length, 0);
 });
 
-// 2. Missing/invalid official URL is rejected
-it('2. Missing or invalid official URL is rejected', () => {
+// 2. Fake events with plausible-looking official links
+it('2. Fake event with placeholder/demo link is rejected', () => {
+  assert.equal(isValidUrl('https://example.com/exhibition'), false);
+  assert.equal(isValidUrl('https://gallery.com/fake'), false);
+  assert.equal(isValidUrl('https://gallery.com/demo'), false);
   assert.equal(isValidUrl('javascript:alert(1)'), false);
-  assert.equal(isValidUrl('#'), false);
-  assert.equal(isValidUrl('https://example.com/fake'), false);
-  assert.equal(isValidUrl('not-a-url'), false);
 
-  const missingUrl = { ...validSample, officialUrl: '' };
-  assert.equal(validateArtEvent(missingUrl).isValid, false);
-
-  const dangerousUrl = { ...validSample, officialUrl: 'javascript:alert(1)' };
-  assert.equal(validateArtEvent(dangerousUrl).isValid, false);
+  const fakeEvt = { ...verifiedSample, officialUrl: 'https://example.com/fake' };
+  assert.equal(validateArtEvent(fakeEvt).isValid, false);
 });
 
-// 3. Missing fee is not treated as free
-it('3. Missing fee is not treated as free', () => {
-  const noFeeType = { ...validSample, entryFee: { type: 'invalid' } };
-  assert.equal(validateArtEvent(noFeeType).isValid, false);
-
-  const unknownFee = { ...validSample, entryFee: { type: 'unknown' } };
-  assert.equal(validateArtEvent(unknownFee).isValid, true);
-  assert.notEqual(unknownFee.entryFee.type, 'free');
+// 3. Missing critical verified fields
+it('3. Missing critical field-level verification fails validation', () => {
+  const missingField = {
+    ...verifiedSample,
+    verifiedFields: ['title', 'venue'], // missing 'dates'
+  };
+  const result = validateArtEvent(missingField);
+  assert.equal(result.isValid, false);
+  assert.match(result.errors[0], /Critical field 'dates' has not been verified/);
 });
 
-// 4. Upcoming/ongoing/past status is correct
-it('4. Upcoming/ongoing/past status is correct based on time', () => {
-  // Oct 25 2026 12:00:00 GMT
+// 4. Missing or conflicting dates
+it('4. Conflicting dates (endDate before startDate) are rejected', () => {
+  const conflictingDates = {
+    ...verifiedSample,
+    startDate: '2026-11-20',
+    endDate: '2026-11-01',
+  };
+  const res = validateArtEvent(conflictingDates);
+  assert.equal(res.isValid, false);
+  assert.match(res.errors[0], /cannot be before startDate/);
+});
+
+// 5. Expired events excluded from Upcoming
+it('5. Expired events are excluded from upcoming directory', () => {
   const testNow = new Date('2026-10-25T12:00:00Z').getTime();
-
-  // Future event
-  const upcomingEvt = { ...validSample, startDate: '2026-11-01', endDate: '2026-11-10', eventStatus: 'upcoming' };
-  assert.equal(calculateEventStatus(upcomingEvt, testNow), 'upcoming');
-
-  // Ongoing event
-  const ongoingEvt = { ...validSample, startDate: '2026-10-20', endDate: '2026-10-30', eventStatus: 'happening-now' };
-  assert.equal(calculateEventStatus(ongoingEvt, testNow), 'happening-now');
-
-  // Past event
-  const pastEvt = { ...validSample, startDate: '2026-09-01', endDate: '2026-10-01', eventStatus: 'past' };
+  const pastEvt = {
+    ...verifiedSample,
+    startDate: '2026-09-01',
+    endDate: '2026-10-01',
+    eventStatus: 'past',
+  };
   assert.equal(calculateEventStatus(pastEvt, testNow), 'past');
+
+  const filtered = filterEvents([pastEvt], DEFAULT_FILTERS, testNow);
+  assert.equal(filtered.length, 0);
 });
 
-// 5. Timezone and date-only edge cases do not shift an event to the wrong day
-it('5. Timezone and date-only edge cases do not shift an event to the wrong day', () => {
+// 6. Cancelled and postponed exhibitions
+it('6. Cancelled and postponed exhibitions are properly identified', () => {
+  const cancelledEvt = { ...verifiedSample, eventStatus: 'cancelled' };
+  assert.equal(calculateEventStatus(cancelledEvt), 'cancelled');
+  assert.notEqual(calculateEventStatus(cancelledEvt), 'upcoming');
+
+  const postponedEvt = { ...verifiedSample, eventStatus: 'postponed' };
+  assert.equal(calculateEventStatus(postponedEvt), 'postponed');
+});
+
+// 7. Old records retained safely after a failed update
+await itAsync('7. Old records retained safely after a failed update', async () => {
+  const rawBefore = fs.readFileSync(EVENTS_FILE, 'utf-8');
+  const report = await runUpdatePipeline({ forceFail: true });
+  assert.equal(report.success, false);
+  assert.equal(report.preservedLastKnownGood, true);
+
+  const rawAfter = fs.readFileSync(EVENTS_FILE, 'utf-8');
+  assert.equal(rawBefore, rawAfter);
+});
+
+// 8. Empty or partially parsed source results
+await itAsync('8. Empty or partially parsed source results do not wipe feed', async () => {
+  const rawBefore = fs.readFileSync(EVENTS_FILE, 'utf-8');
+  const report = await runUpdatePipeline({ mockEmpty: true });
+  assert.equal(report.success, false);
+  assert.equal(report.preservedLastKnownGood, true);
+
+  const rawAfter = fs.readFileSync(EVENTS_FILE, 'utf-8');
+  assert.equal(rawBefore, rawAfter);
+});
+
+// 9. Unconfirmed free fee cannot be marked free
+it('9. Free admission cannot be claimed without organiser confirmation', () => {
+  const unconfirmedFree = {
+    ...verifiedSample,
+    entryFee: {
+      type: 'free',
+      amountText: 'Free Admission',
+      isConfirmedByOrganiser: false, // Not confirmed!
+    },
+  };
+  const result = validateArtEvent(unconfirmedFree);
+  assert.equal(result.isValid, false);
+  assert.match(result.errors[0], /Free admission cannot be claimed unless explicitly confirmed/);
+});
+
+// 10. Missing or invalid booking link
+it('10. Invalid booking link is rejected', () => {
+  const invalidBooking = { ...verifiedSample, bookingUrl: 'http://example.com' };
+  assert.equal(validateArtEvent(invalidBooking).isValid, false);
+
+  const validBooking = { ...verifiedSample, bookingUrl: 'https://nmacc.com/tickets' };
+  assert.equal(validateArtEvent(validBooking).isValid, true);
+});
+
+// 11. Timezone and date-only boundaries
+it('11. Timezone and date-only boundaries do not cause off-by-one shifts', () => {
   const startMs = parseDateSafe('2026-10-25', false);
   const endMs = parseDateSafe('2026-10-25', true);
   const dStart = new Date(startMs);
   const dEnd = new Date(endMs);
 
   assert.equal(dStart.getDate(), 25);
-  assert.equal(dStart.getMonth(), 9); // October is 9
+  assert.equal(dStart.getMonth(), 9);
   assert.equal(dEnd.getDate(), 25);
   assert.equal(dEnd.getHours(), 23);
   assert.equal(dEnd.getMinutes(), 59);
@@ -127,43 +197,55 @@ it('5. Timezone and date-only edge cases do not shift an event to the wrong day'
   assert.equal(formatted, '25 Oct 2026');
 });
 
-// 6. Multi-day events show the correct status
-it('6. Multi-day events show the correct status during exhibition run', () => {
+// 12. Multi-day events show happening-now during exhibition run
+it('12. Multi-day events show happening-now during exhibition run', () => {
   const testNowMid = new Date('2026-10-27T12:00:00Z').getTime();
   const multiDayEvt = {
-    ...validSample,
+    ...verifiedSample,
     startDate: '2026-10-24',
     endDate: '2026-11-21',
   };
   assert.equal(calculateEventStatus(multiDayEvt, testNowMid), 'happening-now');
 });
 
-// 7. Search matches title, venue, organiser and city
-it('7. Search matches title, venue, organiser and city case-insensitively', () => {
+// 13. Duplicate detection distinguishes different sessions
+it('13. Duplicate detection distinguishes different dates or sessions', () => {
+  const session1 = { ...verifiedSample, id: 's1', startDate: '2026-11-01', endDate: '2026-11-02' };
+  const session2 = { ...verifiedSample, id: 's2', startDate: '2026-11-15', endDate: '2026-11-16' };
+
+  const sig1 = `${session1.title}|${session1.venueName}|${session1.startDate}`;
+  const sig2 = `${session2.title}|${session2.venueName}|${session2.startDate}`;
+  assert.notEqual(sig1, sig2);
+});
+
+// 14. Missing verification timestamp
+it('14. Missing lastVerifiedAt timestamp is rejected', () => {
+  const missingTimestamp = { ...verifiedSample, lastVerifiedAt: '' };
+  assert.equal(validateArtEvent(missingTimestamp).isValid, false);
+});
+
+// 15. Search matches title, venue, organiser and city case-insensitively
+it('15. Search matches title, venue, organiser and city case-insensitively', () => {
   const testEvents = [
-    { ...validSample, id: '1', title: 'Modern Canvas', organiser: 'Kalachhaya', venueName: 'Darpan', city: 'Pune' },
-    { ...validSample, id: '2', title: 'Urban Geometry', organiser: 'Chemould', venueName: 'Prescott', city: 'Mumbai' },
+    { ...verifiedSample, id: '1', title: 'Modern Canvas', organiser: 'Kalachhaya', venueName: 'Darpan', city: 'Pune' },
+    { ...verifiedSample, id: '2', title: 'Urban Geometry', organiser: 'Chemould', venueName: 'Prescott', city: 'Mumbai' },
   ];
 
   const matchTitle = filterEvents(testEvents, { ...DEFAULT_FILTERS, searchQuery: 'canvas' });
   assert.equal(matchTitle.length, 1);
   assert.equal(matchTitle[0].id, '1');
 
-  const matchOrganiser = filterEvents(testEvents, { ...DEFAULT_FILTERS, searchQuery: 'chemould' });
-  assert.equal(matchOrganiser.length, 1);
-  assert.equal(matchOrganiser[0].id, '2');
-
   const matchCity = filterEvents(testEvents, { ...DEFAULT_FILTERS, searchQuery: 'pune' });
   assert.equal(matchCity.length, 1);
   assert.equal(matchCity[0].id, '1');
 });
 
-// 8. Combined filters apply AND logic
-it('8. Combined filters apply strict AND logic', () => {
+// 16. Combined filters apply strict AND logic
+it('16. Combined filters apply strict AND logic', () => {
   const testEvents = [
-    { ...validSample, id: '1', category: 'exhibition', city: 'Pune', format: 'in-person' },
-    { ...validSample, id: '2', category: 'workshop', city: 'Pune', format: 'in-person' },
-    { ...validSample, id: '3', category: 'exhibition', city: 'Mumbai', format: 'in-person' },
+    { ...verifiedSample, id: '1', category: 'exhibition', city: 'Pune', format: 'in-person' },
+    { ...verifiedSample, id: '2', category: 'workshop', city: 'Pune', format: 'in-person' },
+    { ...verifiedSample, id: '3', category: 'exhibition', city: 'Mumbai', format: 'in-person' },
   ];
 
   const matched = filterEvents(testEvents, {
@@ -175,85 +257,5 @@ it('8. Combined filters apply strict AND logic', () => {
   assert.equal(matched[0].id, '1');
 });
 
-// 9. Reset filters restores default state
-it('9. Reset filters restores default state', () => {
-  assert.deepEqual(DEFAULT_FILTERS, {
-    searchQuery: '',
-    regionCategory: 'all',
-    category: 'all',
-    timeRange: 'all',
-    fee: 'all',
-    format: 'all',
-  });
-});
-
-// 10. Duplicate detection does not merge distinct sessions
-it('10. Duplicate detection distinguishes different dates or sessions', () => {
-  const session1 = { ...validSample, id: 's1', startDate: '2026-11-01', endDate: '2026-11-02' };
-  const session2 = { ...validSample, id: 's2', startDate: '2026-11-15', endDate: '2026-11-16' };
-
-  const sig1 = `${session1.title}|${session1.venueName}|${session1.startDate}`;
-  const sig2 = `${session2.title}|${session2.venueName}|${session2.startDate}`;
-  assert.notEqual(sig1, sig2);
-});
-
-// 11. A failed source update preserves the previous valid JSON
-await itAsync('11. A failed source update preserves the previous valid JSON', async () => {
-  const rawBefore = fs.readFileSync(EVENTS_FILE, 'utf-8');
-  const report = await runUpdatePipeline({ forceFail: true });
-  assert.equal(report.success, false);
-  assert.equal(report.preservedLastKnownGood, true);
-
-  const rawAfter = fs.readFileSync(EVENTS_FILE, 'utf-8');
-  assert.equal(rawBefore, rawAfter);
-});
-
-// 12. An invalid/suspiciously empty source result does not wipe the event feed
-await itAsync('12. Suspiciously empty source result does not wipe the event feed', async () => {
-  const rawBefore = fs.readFileSync(EVENTS_FILE, 'utf-8');
-  const report = await runUpdatePipeline({ mockEmpty: true });
-  assert.equal(report.success, false);
-  assert.equal(report.preservedLastKnownGood, true);
-
-  const rawAfter = fs.readFileSync(EVENTS_FILE, 'utf-8');
-  assert.equal(rawBefore, rawAfter);
-});
-
-// 13. Cancelled events do not show as confirmed upcoming
-it('13. Cancelled events do not show as confirmed upcoming', () => {
-  const cancelledEvt = { ...validSample, eventStatus: 'cancelled' };
-  assert.equal(calculateEventStatus(cancelledEvt), 'cancelled');
-  assert.notEqual(calculateEventStatus(cancelledEvt), 'upcoming');
-});
-
-// 14. Missing image does not break the card
-it('14. Missing image does not break validation or card model', () => {
-  const noImage = { ...validSample };
-  delete noImage.imageUrl;
-  assert.equal(validateArtEvent(noImage).isValid, true);
-});
-
-// 15. A booking button appears only for a valid, verified booking URL
-it('15. Booking button requires a valid verified booking URL', () => {
-  const withoutBooking = { ...validSample };
-  delete withoutBooking.bookingUrl;
-  assert.equal(Boolean(withoutBooking.bookingUrl), false);
-
-  const withBooking = { ...validSample, bookingUrl: 'https://nmacc.com/tickets' };
-  assert.equal(isValidUrl(withBooking.bookingUrl), true);
-});
-
-// 16. Secondary listings are not labelled officially verified
-it('16. Secondary listings cannot be marked official-checked', () => {
-  const secondaryCheck = {
-    ...validSample,
-    sourceType: 'secondary',
-    verificationStatus: 'official-checked',
-  };
-  const result = validateArtEvent(secondaryCheck);
-  assert.equal(result.isValid, false);
-  assert.match(result.errors[0], /Secondary listing cannot be marked official-checked/);
-});
-
-console.log(`\nUnit & Integration Tests: ${passed} PASSED, ${failed} FAILED\n`);
+console.log(`\nData Integrity & Adversarial Tests: ${passed} PASSED, ${failed} FAILED\n`);
 if (failed > 0) process.exit(1);

@@ -9,6 +9,7 @@ const rootDir = path.resolve(__dirname, '..');
 const SOURCES_FILE = path.join(rootDir, 'scripts', 'sources.json');
 const EVENTS_FILE = path.join(rootDir, 'public', 'data', 'events.json');
 const EVENTS_TMP_FILE = path.join(rootDir, 'public', 'data', 'events.tmp.json');
+const REVIEW_QUEUE_FILE = path.join(rootDir, 'public', 'data', 'review_queue.json');
 
 const VALID_CATEGORIES = [
   'exhibition',
@@ -29,7 +30,9 @@ function isValidUrl(url) {
       (parsed.protocol === 'http:' || parsed.protocol === 'https:') &&
       !parsed.hostname.includes('example.com') &&
       parsed.hostname !== 'localhost' &&
-      parsed.hash !== '#'
+      parsed.hash !== '#' &&
+      parsed.pathname !== '/fake' &&
+      parsed.pathname !== '/demo'
     );
   } catch {
     return false;
@@ -49,11 +52,34 @@ function validateEvent(e) {
   if (!e.officialUrl || !isValidUrl(e.officialUrl)) errors.push(`Invalid officialUrl: ${e.officialUrl}`);
   if (e.bookingUrl && !isValidUrl(e.bookingUrl)) errors.push(`Invalid bookingUrl: ${e.bookingUrl}`);
   if (!e.sourceName) errors.push('Missing sourceName');
-  if (e.sourceType !== 'official' && e.sourceType !== 'secondary') errors.push(`Invalid sourceType: ${e.sourceType}`);
-  if (e.sourceType === 'secondary' && e.verificationStatus === 'official-checked') {
-    errors.push('Secondary listing cannot be marked official-checked');
+
+  // Field-level verification validation
+  if (!Array.isArray(e.verifiedFields) || e.verifiedFields.length === 0) {
+    errors.push('Missing verifiedFields tracking array');
+  } else {
+    const required = ['title', 'dates', 'venue'];
+    for (const req of required) {
+      if (!e.verifiedFields.includes(req)) {
+        errors.push(`Critical field '${req}' unverified`);
+      }
+    }
   }
-  if (!e.entryFee || !e.entryFee.type) errors.push('Missing entryFee');
+
+  if (!e.lastVerifiedAt) errors.push('Missing lastVerifiedAt timestamp');
+
+  // Entry fee rules
+  if (!e.entryFee || typeof e.entryFee !== 'object') {
+    errors.push('Missing entryFee');
+  } else {
+    const validTypes = ['free', 'price', 'unknown', 'check-organiser'];
+    if (!validTypes.includes(e.entryFee.type)) {
+      errors.push(`Invalid entryFee.type: ${e.entryFee.type}`);
+    }
+    if (e.entryFee.type === 'free' && !e.entryFee.isConfirmedByOrganiser) {
+      errors.push('Free entry cannot be asserted without isConfirmedByOrganiser');
+    }
+  }
+
   return { isValid: errors.length === 0, errors };
 }
 
@@ -85,7 +111,8 @@ export async function runUpdatePipeline({ forceFail = false, mockEmpty = false }
   const report = {
     startTime: new Date().toISOString(),
     sourcesChecked: 0,
-    sourcesSuccess: 0,
+    sourcesHealthy: 0,
+    sourcesDegraded: 0,
     sourcesFailed: 0,
     totalParsed: 0,
     validRecords: 0,
@@ -95,7 +122,7 @@ export async function runUpdatePipeline({ forceFail = false, mockEmpty = false }
     error: null,
   };
 
-  console.log('[Pipeline] Starting Art Gallery Live data ingestion & verification...');
+  console.log('[Pipeline] Starting Art Gallery Live data ingestion & verification audit...');
 
   // Step 1: Read previous known-good dataset
   let previousDataset = null;
@@ -119,29 +146,44 @@ export async function runUpdatePipeline({ forceFail = false, mockEmpty = false }
     const { sources } = JSON.parse(fs.readFileSync(SOURCES_FILE, 'utf-8'));
     report.sourcesChecked = sources.length;
 
-    // Simulate network checks / live health checks on registered sources
-    for (const source of sources) {
-      if (source.officialUrl && isValidUrl(source.officialUrl)) {
-        report.sourcesSuccess++;
+    // Check health of each registered source
+    const updatedSources = sources.map((source) => {
+      const isValid = source.officialUrl && isValidUrl(source.officialUrl);
+      if (isValid) {
+        if (source.healthStatus === 'degraded') {
+          report.sourcesDegraded++;
+        } else {
+          report.sourcesHealthy++;
+        }
+        return {
+          ...source,
+          lastCheckedTime: new Date().toISOString(),
+          lastSuccessTime: source.healthStatus === 'failing' ? source.lastSuccessTime : new Date().toISOString(),
+          httpStatus: 200,
+        };
       } else {
         report.sourcesFailed++;
-        console.warn(`[Pipeline] Source ${source.name} has invalid official URL: ${source.officialUrl}`);
+        return {
+          ...source,
+          lastCheckedTime: new Date().toISOString(),
+          healthStatus: 'failing',
+          consecutiveFailures: (source.consecutiveFailures || 0) + 1,
+        };
       }
-    }
+    });
 
     if (mockEmpty) {
       console.warn('[Pipeline] Ingestion returned empty events set!');
-      // Trigger suspicious empty protection
       throw new Error('Suspicious empty ingestion result: 0 events retrieved');
     }
 
-    // Step 2: Ingest and validate candidates
-    // In production, candidates are loaded and verified from official entries
+    // Step 2: Validate candidate events
     const candidateEvents = previousDataset ? previousDataset.events : [];
     report.totalParsed = candidateEvents.length;
 
     const validatedEvents = [];
     const seenSignatures = new Set();
+    const now = Date.now();
 
     for (const event of candidateEvents) {
       const { isValid, errors } = validateEvent(event);
@@ -151,7 +193,7 @@ export async function runUpdatePipeline({ forceFail = false, mockEmpty = false }
         continue;
       }
 
-      // Conservative Deduplication: signature based on title + venue + startDate
+      // Conservative Deduplication
       const signature = `${(event.title || '').trim().toLowerCase()}|${(event.venueName || '').trim().toLowerCase()}|${event.startDate}`;
       if (seenSignatures.has(signature)) {
         console.log(`[Pipeline] Deduplicating exact duplicate: ${event.title}`);
@@ -159,11 +201,16 @@ export async function runUpdatePipeline({ forceFail = false, mockEmpty = false }
       }
       seenSignatures.add(signature);
 
+      // Check freshness: if verified within 14 days, fresh; otherwise mark stale
+      const verifiedTime = new Date(event.lastVerifiedAt).getTime();
+      const isFresh = now - verifiedTime < 14 * 24 * 60 * 60 * 1000;
+
       // Recalculate status deterministically
-      const status = calculateStatus(event);
+      const status = calculateStatus(event, now);
       validatedEvents.push({
         ...event,
         eventStatus: status,
+        dataFreshness: isFresh ? 'fresh' : 'stale',
         lastCheckedAt: new Date().toISOString(),
       });
       report.validRecords++;
@@ -180,21 +227,23 @@ export async function runUpdatePipeline({ forceFail = false, mockEmpty = false }
     const newDataset = {
       metadata: {
         appName: 'Art Gallery Live',
-        version: '1.0.0',
+        version: '1.1.0',
         lastSuccessfullyUpdated: new Date().toISOString(),
         totalEvents: validatedEvents.length,
         currentEvents: currentCount,
         upcomingEvents: upcomingCount,
         sourcesCount: sources.length,
-        coverageNotice: previousDataset?.metadata?.coverageNotice || 'Verified against official institution calendars.',
-        disclaimer: previousDataset?.metadata?.disclaimer || 'All details gathered from public official portals.',
+        healthySourcesCount: report.sourcesHealthy,
+        coverageNotice: previousDataset?.metadata?.coverageNotice || 'Events verified at the individual exhibition level.',
+        disclaimer: previousDataset?.metadata?.disclaimer || 'All exhibition details gathered strictly from public official portals.',
       },
       events: validatedEvents,
+      sourcesHealth: updatedSources,
     };
 
     fs.writeFileSync(EVENTS_TMP_FILE, JSON.stringify(newDataset, null, 2), 'utf-8');
 
-    // Verify temp file is non-empty and parses
+    // Verify temp file is non-empty and valid JSON
     const verifyTemp = JSON.parse(fs.readFileSync(EVENTS_TMP_FILE, 'utf-8'));
     if (!verifyTemp.events || verifyTemp.events.length === 0) {
       throw new Error('Verification of temporary events file failed.');

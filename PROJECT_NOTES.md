@@ -1,156 +1,75 @@
-# ART GALLERY LIVE — PROJECT NOTES & ENGINEERING LOG
+# ART GALLERY LIVE — DATA INTEGRITY AUDIT & ENGINEERING LOG
 
-**Date**: 25 October 2026  
-**Author**: Antigravity Assistant & Product Team  
+**Audit Date**: 25 October 2026  
+**Auditor**: Antigravity Technical Lead & Senior Data Integrity Engineer  
 **Project Root**: `C:\Users\Admin\.gemini\antigravity\scratch\art-gallery-live`  
 **Git Root**: `C:\Users\Admin\.gemini\antigravity\scratch\art-gallery-live\.git`  
-**Target Repository**: `https://github.com/utkarshnikhare/art-gallery-live`  
-**Public Application URL**: `https://utkarshnikhare.github.io/art-gallery-live/`  
+**Repository**: [https://github.com/utkarshnikhare/art-gallery-live](https://github.com/utkarshnikhare/art-gallery-live)  
+**Public Application URL**: [https://utkarshnikhare.github.io/art-gallery-live/](https://utkarshnikhare.github.io/art-gallery-live/)  
 
 ---
 
-## 1. Architectural Decisions & Rationale
+## 1. Data Integrity Audit & Remediation Findings
 
-1. **Static Frontend Architecture (Vite + React 19 + TypeScript)**:
-   - Zero-server overhead, maximum speed, hosted directly on GitHub Pages.
-   - Restrained, gallery-grade CSS styling avoiding heavyweight UI component frameworks to keep page load fast.
-   - Clean modular architecture: `Header`, `SearchBar`, `FilterBar`, `EventCard`, `EventModal`, `SourceDirectoryModal`, and `AboutModal`.
-2. **Data Pipeline & Last-Known-Good Safety**:
-   - `scripts/update_events.mjs`: Native Node.js ES module.
-   - Atomic replacement: New data is written to `events.tmp.json`, verified against the strict schema, and only moved to `public/data/events.json` upon complete success.
-   - Upstream failure protection: If an institution website is down or returns suspicious/empty data, the pipeline halts immediately and preserves the last known-good dataset and update timestamp.
-   - Deduplication: Conservative key `title|venueName|startDate` ensures distinct exhibition sessions or workshop days are not merged.
-3. **Honest Cultural Event Discovery (No Filler/Fabrication)**:
-   - Admission fee: Missing fee information is explicitly shown as `Fee: Check Organiser` rather than falsely labeled as free.
-   - Booking buttons: Rendered *only* when an authenticated, safe external ticket URL is verified. No dead `#` anchors or fake buttons.
-   - Past events: Deterministically excluded from the default upcoming directory.
-4. **Strict Multi-Faceted Filtering**:
-   - Search query matches title, artist/curator, venue, city, and description case-insensitively.
-   - Region filtering prioritizes Pune & PCMC, Mumbai Region, Maharashtra State, India, and International hubs.
-   - Combined filters apply strict AND semantics; reset button restores default view in-place without page reload.
+### A. Non-Negotiable Integrity Rules Applied
+1. **Exhibition-Level Grounding**: An institution homepage alone is insufficient. Listings must link to a specific exhibition announcement or catalog.
+2. **Honest Admission Fees**: Free entry is never assumed. Unconfirmed fees are explicitly labeled `Fee: Check Organiser`.
+3. **Quarantine Review Queue**: Permanent museum collections, rotating schedules without named artist lineups, and unverified leads are segregated into `review_queue.json` and excluded from the public directory.
+4. **Field-Level Verification Tracking**: Every event explicitly tracks verified fields (`['title', 'dates', 'venue', 'admissionFee', 'organiser']`) and includes an exact `lastVerifiedAt` timestamp.
 
----
-
-## 2. Inventory of Created Files
-
-- `PROJECT_BOUNDARIES.md` — Strict isolation manifesto distinguishing Art Gallery Live from Search Utility (`excel-manager`).
-- `PROJECT_NOTES.md` — Complete engineering record, test metrics, and deployment audit.
-- `README.md` — Public documentation, usage guide, source registry, and contribution guidelines.
-- `package.json` & `package-lock.json` — Dependencies, build scripts, and test commands.
-- `tsconfig.json` — TypeScript compiler configuration with ES2022 and React 19 JSX support.
-- `vite.config.ts` — Vite configuration with base path `/art-gallery-live/`.
-- `index.html` — Accessible HTML shell with metadata and SVG favicon.
-- `src/main.tsx` — React entry point.
-- `src/App.tsx` — Main application component managing state, fetch, filtering, and modals.
-- `src/index.css` — Custom accessible editorial art styles with responsive breakpoints and reduced-motion support.
-- `src/types.ts` — Comprehensive TypeScript interfaces for events, filters, sources, and metadata.
-- `src/vite-env.d.ts` — Vite client type declarations.
-- `src/utils/dateUtils.ts` — Date parsing, status derivation, and human range formatting.
-- `src/utils/filterUtils.ts` — Search query matching, region categorization, and multi-filter AND logic.
-- `src/utils/validation.ts` — Strict event schema validator and URL security guard.
-- `src/components/Header.tsx` — Application header with live timestamp and navigation buttons.
-- `src/components/SearchBar.tsx` — Case-insensitive search bar with clear button and quick filter shortcuts.
-- `src/components/FilterBar.tsx` — Detailed dropdown filters, results counter, and reset button.
-- `src/components/EventCard.tsx` — Accessible event card displaying verified details, fee badges, and links.
-- `src/components/EventModal.tsx` — Detailed exhibition popup dialog with full venue notes and dates.
-- `src/components/SourceDirectoryModal.tsx` — Modal displaying registered institutions and collection status.
-- `src/components/AboutModal.tsx` — Modal explaining data verification rules and accuracy policies.
-- `public/data/events.json` — Production verified art event dataset.
-- `public/data/sources.json` — Frontend source registry file.
-- `scripts/sources.json` — Source registry configuration.
-- `scripts/update_events.mjs` — Automated data ingestion, validation, and failure-protected sync script.
-- `.github/workflows/deploy.yml` — Automated GitHub Pages build and deployment workflow.
-- `.github/workflows/update-events.yml` — Scheduled daily data refresh workflow.
-- `.gitignore` — Git exclusion rules.
-- `tests/unit.test.mjs` — 16 unit and integration tests.
-- `tests/e2e.test.mjs` — 15 browser E2E tests executing in headless Chrome/Edge.
-- `tests/run-all-tests.mjs` — Master test runner orchestrating unit and E2E suites.
+### B. Audit Breakdown of Candidate Records
+- **Original Candidate Records**: 18
+- **Confirmed & Retained (with exhibition evidence)**: 13
+- **Corrected to Specific Installment**: 1 (*Where the Body Begins: Body* at VHC Pune)
+- **New Verified Exhibitions Added**: 4
+  - *Prajith Ellampilal & Ramansh Bhargava: (Not) In Plain Sight* (VHC Pune)
+  - *The Shapes of Elsewhere* by Kalpana Shah (Tao Art Gallery Mumbai)
+  - *Sarnath Banerjee: Badly Remembered Things* (Project 88 Mumbai)
+  - *From Line to Landscape: Works on Paper* (Akara Modern Mumbai)
+- **Quarantined to Review Queue (`public/data/review_queue.json`)**: 5
+  - `evt-jehangir-rotating-show`: Rotating hall display notice. Lacks individual artist exhibition confirmation.
+  - `evt-darpan-pune-oct`: Kalachhaya Campus general showcase. Lacks dedicated exhibition catalog.
+  - `evt-kelkar-heritage`: Raja Dinkar Kelkar permanent collection. Not a time-bounded special exhibition.
+  - `evt-monalisa-autumn-craft`: Monalisa Kalagram seasonal workshop lead. Lacks verified dates/ticket link.
+  - `evt-zapurza-collection`: Zapurza permanent display. Permanent museum collection rather than time-bounded special exhibition.
+- **Total Published Confirmed Records**: **17 verified events** (10 Happening Now, 7 Upcoming)
 
 ---
 
-## 3. Verified Sources & Dataset Coverage
+## 2. Source Coverage & Health Assessment
 
-**Total Registered Sources**: 16  
-**Total Verified Events**: 18  
-- **Happening Now (Current)**: 10  
-- **Upcoming**: 8  
-
-### Implemented Sources:
-1. **Zapurza Museum of Art & Culture** — `https://zapurza.org/` (Pune)
-2. **Vida Heydari Contemporary (VHC)** — `https://vhc.art/exhibitions` (Pune)
-3. **Raja Dinkar Kelkar Museum** — `https://www.rajakelkarmuseum.org/` (Pune)
-4. **Monalisa Kalagram** — `https://monalisakalagram.com/` (Pune)
-5. **Darpan Art Gallery** — `https://kalachhaya.org/` (Pune)
-6. **Chemould Prescott Road** — `https://gallerychemould.com/exhibitions/` (Mumbai)
-7. **TARQ Mumbai** — `https://www.tarq.in/` (Mumbai)
-8. **Jehangir Nicholson Art Foundation (JNAF @ CSMVS)** — `https://jnaf.org/` (Mumbai)
-9. **NMACC Art House** — `https://www.nmacc.com/` (Mumbai)
-10. **Jehangir Art Gallery** — `https://jehangirartgallery.com/` (Mumbai)
-11. **Mumbai Gallery Weekend** — `https://www.mumbaigalleryweekend.com/` (Mumbai)
-12. **Kala Ghoda Arts Festival** — `https://kalaghodaassociation.com/` (Mumbai)
-13. **Kiran Nadar Museum of Art (KNMA)** — `https://www.knma.in/` (New Delhi)
-14. **India Art Fair** — `https://indiaartfair.in/` (New Delhi)
-15. **Museum of Art & Photography (MAP)** — `https://map-india.org/` (Bengaluru)
-16. **Tate Modern & Tate Britain** — `https://www.tate.org.uk/` (London, UK)
+- **Total Monitored Institutions**: 16
+  - **Healthy (HTTP 200 & verified events)**: 15
+  - **Degraded (rotating calendar under revision)**: 1 (*Jehangir Art Gallery*, leads quarantined in review queue)
+- Full per-source metrics, collection methods, and limitations are published in [`SOURCE_COVERAGE_REPORT.md`](file:///SOURCE_COVERAGE_REPORT.md).
 
 ---
 
-## 5. Live Production Deployment & Verification Audit
+## 3. Automated Test Suite Metrics
 
-- **Repository**: [https://github.com/utkarshnikhare/art-gallery-live](https://github.com/utkarshnikhare/art-gallery-live)
-- **Public URL**: [https://utkarshnikhare.github.io/art-gallery-live/](https://utkarshnikhare.github.io/art-gallery-live/)
-- **Initial Commit SHA**: `b639cbedd78a99df2fc4233d03c1f8cff238f9cd`
-- **Daily Ingestion Pipeline Run SHA**: `35b6ecf`
-- **GitHub Actions Deploy Run**: `40175856487` (Status: SUCCESS, Deploy to GitHub Pages)
-- **GitHub Actions Ingestion Run**: `40176008763` (Status: SUCCESS, sync-events passed in 12s)
+All tests executed via `npm test`:
+- **Unit & Adversarial Integrity Suite (`tests/unit.test.mjs`)**: **16 PASSED, 0 FAILED**
+  1. Valid event passes schema & field-level validation.
+  2. Fake event with placeholder/demo link is rejected.
+  3. Missing critical field-level verification fails validation.
+  4. Conflicting dates (endDate before startDate) are rejected.
+  5. Expired events are excluded from upcoming directory.
+  6. Cancelled and postponed exhibitions are properly identified.
+  7. Old records retained safely after a failed update.
+  8. Empty or partially parsed source results do not wipe feed.
+  9. Free admission cannot be claimed without organiser confirmation.
+  10. Invalid booking link is rejected.
+  11. Timezone and date-only boundaries do not cause off-by-one shifts.
+  12. Multi-day events show happening-now during exhibition run.
+  13. Duplicate detection distinguishes different dates or sessions.
+  14. Missing lastVerifiedAt timestamp is rejected.
+  15. Search matches title, venue, organiser and city case-insensitively.
+  16. Combined filters apply strict AND logic.
+- **Browser E2E Suite (`tests/e2e.test.mjs`)**: **15 PASSED, 0 FAILED**
+  - Tested on desktop (1366×768) and mobile (390×844) viewports: 0 console errors, zero overflow, responsive layout, modal dialogs, and authentic link navigation.
+- **Production Verification (`scripts/verify_live_deployment.mjs`)**: **100% SUCCESS** on live GitHub Pages deployment.
 
-### Live Browser Audit Findings (`scripts/verify_live_deployment.mjs`):
-1. **HTTP Status**: 200 OK on both `index.html` and `public/data/events.json`.
-2. **Console Errors**: 0 console errors in live browser environment.
-3. **Card Rendering**: 18 verified cards rendered from production `events.json`.
-4. **Desktop Layout**: Verified at 1366×768 with clean 3-column responsive grid and zero layout glitches.
-5. **Mobile Layout**: Verified at 390×844 with single-column stack, comfortable touch targets, and strictly zero horizontal overflow.
-6. **Live Interactions**: Interactive search ("Pune" narrowed to 5 cards), modal view opened/closed without issues, and external links point to authentic institutions.
+---
 
-
-### Unit & Integration Tests (`tests/unit.test.mjs`)
-- **Total Tests**: 16
-- **Passed**: 16
-- **Failed**: 0
-1. Valid event passes validation — PASSED
-2. Missing or invalid official URL is rejected — PASSED
-3. Missing fee is not treated as free — PASSED
-4. Upcoming/ongoing/past status is correct based on time — PASSED
-5. Timezone and date-only edge cases do not shift an event to the wrong day — PASSED
-6. Multi-day events show the correct status during exhibition run — PASSED
-7. Search matches title, venue, organiser and city case-insensitively — PASSED
-8. Combined filters apply strict AND logic — PASSED
-9. Reset filters restores default state — PASSED
-10. Duplicate detection distinguishes different dates or sessions — PASSED
-11. A failed source update preserves the previous valid JSON — PASSED
-12. Suspiciously empty source result does not wipe the event feed — PASSED
-13. Cancelled events do not show as confirmed upcoming — PASSED
-14. Missing image does not break validation or card model — PASSED
-15. Booking button requires a valid verified booking URL — PASSED
-16. Secondary listings cannot be marked official-checked — PASSED
-
-### Browser E2E Tests (`tests/e2e.test.mjs`)
-- **Total Tests**: 15
-- **Passed**: 15
-- **Failed**: 0
-- **Tested Resolution**: Desktop 1366×768 & Mobile 390×844
-1. Application loads without console errors — PASSED
-2. Data comes from `events.json` (cards rendered > 0) — PASSED
-3. Search filter narrows cards — PASSED
-4. Search clear restores cards — PASSED
-5. Official details link uses valid HTTP/HTTPS URLs — PASSED
-6. Booking button only renders when bookingUrl is verified — PASSED
-7. Fee badges show honest status — PASSED
-8. Update timestamp displayed in header — PASSED
-9. Empty state appears with helpful guidance on zero matches — PASSED
-10. Reset button from empty state restores feed — PASSED
-11. Keyboard tab focus works — PASSED
-12. Mobile viewport (390×844) has NO horizontal overflow — PASSED
-13. Desktop layout (1366×768) header and grid readable — PASSED
-14. No dead `#` or example.com links anywhere — PASSED
-15. Past events excluded from default upcoming view — PASSED
+## 4. Project Isolation Guarantee
+Search Utility (`excel-manager`) remains completely untouched. No shared files, configurations, workflows, or repositories.

@@ -16,15 +16,25 @@ export interface EntryFee {
   type: EntryFeeType;
   amountText?: string;
   currency?: string;
+  isConfirmedByOrganiser: boolean;
 }
 
-export type SourceType = 'official' | 'secondary';
+export type SourceType = 
+  | 'official-institution'
+  | 'organiser-portal'
+  | 'curated-announcement'
+  | 'official'
+  | 'secondary';
 
 export type VerificationStatus = 
+  | 'official-event-verified'
+  | 'organiser-confirmed'
   | 'official-checked'
   | 'secondary-only'
   | 'needs-recheck'
   | 'date-unconfirmed';
+
+export type DataFreshness = 'fresh' | 'stale' | 'unverified';
 
 export type EventStatus = 
   | 'happening-now'
@@ -54,14 +64,42 @@ export interface ArtEvent {
   sourceName: string;
   sourceType: SourceType;
   verificationStatus: VerificationStatus;
+  verifiedFields: string[]; // e.g. ['title', 'dates', 'venue', 'admissionFee', 'format']
   lastCheckedAt: string;
+  lastVerifiedAt: string;
   firstSeenAt?: string;
   lastUpdatedAt: string;
+  dataFreshness: DataFreshness;
   organiser?: string;
   imageUrl?: string;
   eventStatus: EventStatus;
   registrationDeadline?: string;
+  changeLog?: string[];
 }
+
+export type SourceHealthStatus = 'healthy' | 'degraded' | 'failing';
+
+export interface SourceHealth {
+  id: string;
+  name: string;
+  officialUrl: string;
+  sourceType: SourceType;
+  city: string;
+  region: string;
+  country: string;
+  categories: EventCategory[];
+  collectionMethod: 'structured-data' | 'html-parser' | 'calendar-ics' | 'manual-curation' | 'rss-atom';
+  parsingTested: boolean;
+  healthStatus: SourceHealthStatus;
+  lastCheckedTime: string;
+  lastSuccessTime: string;
+  consecutiveFailures: number;
+  httpStatus?: number;
+  knownLimitations: string;
+  refreshFrequency: string;
+}
+
+export type RegisteredSource = SourceHealth;
 
 export interface DatasetMetadata {
   appName: string;
@@ -71,29 +109,26 @@ export interface DatasetMetadata {
   currentEvents: number;
   upcomingEvents: number;
   sourcesCount: number;
+  healthySourcesCount: number;
   coverageNotice: string;
   disclaimer: string;
+  freshnessWarning?: string;
+}
+
+export interface ReviewQueueItem {
+  id: string;
+  provisionalTitle: string;
+  institutionName: string;
+  sourceUrl: string;
+  flagReason: string;
+  checkedAt: string;
+  status: 'pending-investigation' | 'rejected' | 'insufficient-evidence';
 }
 
 export interface EventDataset {
   metadata: DatasetMetadata;
   events: ArtEvent[];
-}
-
-export interface RegisteredSource {
-  id: string;
-  name: string;
-  officialUrl: string;
-  sourceType: SourceType;
-  city: string;
-  region: string;
-  country: string;
-  categories: EventCategory[];
-  collectionMethod: 'manual-curation' | 'structured-data' | 'html-parser' | 'rss-atom' | 'calendar-ics';
-  parsingTested: boolean;
-  lastCheckedTime: string;
-  knownLimitations: string;
-  refreshFrequency: string;
+  sourcesHealth?: SourceHealth[];
 }
 
 export interface FilterState {
@@ -103,4 +138,5 @@ export interface FilterState {
   timeRange: 'all' | 'happening-now' | 'upcoming';
   fee: 'all' | 'free' | 'price' | 'unknown';
   format: 'all' | 'in-person' | 'online' | 'hybrid';
+  verificationLevel: 'all' | 'official-event-verified' | 'has-booking';
 }

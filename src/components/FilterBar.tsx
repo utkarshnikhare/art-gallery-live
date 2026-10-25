@@ -21,7 +21,8 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     filters.category !== 'all' ||
     filters.timeRange !== 'all' ||
     filters.fee !== 'all' ||
-    filters.format !== 'all';
+    filters.format !== 'all' ||
+    filters.verificationLevel !== 'all';
 
   const handleReset = () => {
     onChange(DEFAULT_FILTERS);
@@ -115,11 +116,26 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             <option value="hybrid">Hybrid</option>
           </select>
         </div>
+
+        {/* Verification Filter */}
+        <div className="filter-field">
+          <label htmlFor="filter-verification">Verification</label>
+          <select
+            id="filter-verification"
+            className="select-control"
+            value={filters.verificationLevel}
+            onChange={(e) => onChange({ ...filters, verificationLevel: e.target.value as any })}
+          >
+            <option value="all">All Confirmed Records</option>
+            <option value="official-event-verified">Official Event Verified</option>
+            <option value="has-booking">Has Verified Booking Link</option>
+          </select>
+        </div>
       </div>
 
       <div className="filter-footer">
         <div className="results-count" role="status">
-          Showing <strong>{totalFiltered}</strong> of {totalAvailable} verified events
+          Showing <strong>{totalFiltered}</strong> of {totalAvailable} verified art events
         </div>
 
         {isFiltered && (

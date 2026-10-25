@@ -1,0 +1,51 @@
+{
+  "description": "Internal verification review queue. Entries in this queue are under investigation or represent generic institution collections and are strictly EXCLUDED from the confirmed public events feed.",
+  "lastAudited": "2026-10-25T13:50:00+05:30",
+  "reviewItems": [
+    {
+      "id": "rev-jehangir-rotating-show",
+      "provisionalTitle": "Weekly Contemporary Expressions Showcase",
+      "institutionName": "Jehangir Art Gallery",
+      "sourceUrl": "https://jehangirartgallery.com/",
+      "flagReason": "Generic weekly turnover notice across Auditorium Hall and Galleries 1-4. Lacks individual artist exhibition catalog confirmation.",
+      "checkedAt": "2026-10-25T13:50:00+05:30",
+      "status": "pending-investigation"
+    },
+    {
+      "id": "rev-darpan-pune-oct",
+      "provisionalTitle": "Kalachhaya Studio Showcase & Student Art Exhibition",
+      "institutionName": "Darpan Art Gallery",
+      "sourceUrl": "https://kalachhaya.org/",
+      "flagReason": "Campus-level cultural schedule; lacks specific individual artist exhibition page or confirmed dates.",
+      "checkedAt": "2026-10-25T13:50:00+05:30",
+      "status": "insufficient-evidence"
+    },
+    {
+      "id": "rev-kelkar-heritage",
+      "provisionalTitle": "Treasures of Everyday Indian Art: Mastani Mahal & Musical Heritage",
+      "institutionName": "Raja Dinkar Kelkar Museum",
+      "sourceUrl": "https://www.rajakelkarmuseum.org/",
+      "flagReason": "Permanent museum gallery display rather than a time-bounded special exhibition or public event.",
+      "checkedAt": "2026-10-25T13:50:00+05:30",
+      "status": "rejected"
+    },
+    {
+      "id": "rev-monalisa-autumn-craft",
+      "provisionalTitle": "Autumn Studio Showcase & Artisan Workshops",
+      "institutionName": "Monalisa Kalagram",
+      "sourceUrl": "https://monalisakalagram.com/",
+      "flagReason": "Seasonal workshop lead. Specific workshop registration URLs and syllabus are not confirmed by official portal.",
+      "checkedAt": "2026-10-25T13:50:00+05:30",
+      "status": "pending-investigation"
+    },
+    {
+      "id": "rev-zapurza-collection",
+      "provisionalTitle": "Masterpieces of Indian Visual Art & Traditional Crafts",
+      "institutionName": "Zapurza Museum of Art & Culture",
+      "sourceUrl": "https://zapurza.org/",
+      "flagReason": "Permanent collection galleries rather than a time-bounded special exhibition. Temporary events will be ingested via dedicated exhibition pages.",
+      "checkedAt": "2026-10-25T13:50:00+05:30",
+      "status": "rejected"
+    }
+  ]
+}

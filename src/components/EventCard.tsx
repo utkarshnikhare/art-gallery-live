@@ -23,6 +23,8 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onOpenModal }) => {
     'other': 'Visual Art',
   };
 
+  const reportUrl = `https://github.com/utkarshnikhare/art-gallery-live/issues/new?title=${encodeURIComponent(`[Event Update] ${event.title}`)}&body=${encodeURIComponent(`Event ID: ${event.id}\nVenue: ${event.venueName}\nOfficial URL: ${event.officialUrl}\n\nPlease describe the correction (e.g. cancelled, date change, fee adjustment):`)}`;
+
   return (
     <article className="event-card" aria-labelledby={`event-title-${event.id}`}>
       <div className="card-top">
@@ -66,11 +68,12 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onOpenModal }) => {
         <span className="date-text">{formattedDates}</span>
       </div>
 
+      {/* Field-level verification badges */}
       <div className="card-badges">
         {/* Fee status */}
-        {event.entryFee.type === 'free' ? (
-          <span className="fee-badge free" title="Verified free public entry">
-            ✓ Free Admission
+        {event.entryFee.type === 'free' && event.entryFee.isConfirmedByOrganiser ? (
+          <span className="fee-badge free" title="Organiser explicitly confirmed free public admission">
+            ✓ Confirmed Free Entry
           </span>
         ) : event.entryFee.type === 'price' ? (
           <span className="fee-badge paid" title="Paid ticket required">
@@ -82,17 +85,38 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onOpenModal }) => {
           </span>
         )}
 
-        {/* Verification status */}
-        {event.sourceType === 'official' && event.verificationStatus === 'official-checked' ? (
-          <span className="verification-badge official" title="Verified against official museum/gallery announcements">
-            ✓ Official Source
+        {/* Verification status badge */}
+        {event.verificationStatus === 'official-event-verified' ? (
+          <span className="verification-badge official" title="Verified against specific exhibition page and organizer announcement">
+            ✓ Event Verified
+          </span>
+        ) : event.verificationStatus === 'organiser-confirmed' ? (
+          <span className="verification-badge organiser" title="Confirmed by official festival/biennale organizer portal">
+            ✓ Organiser Confirmed
           </span>
         ) : (
-          <span className="verification-badge secondary" title="Secondary listing — please verify with organiser">
-            Secondary Listing
+          <span className="verification-badge secondary" title="Secondary listing — check organiser page">
+            Secondary Lead
+          </span>
+        )}
+
+        {/* Freshness Badge */}
+        {event.dataFreshness === 'stale' && (
+          <span className="freshness-badge stale" title="Verification timestamp is older than 14 days without recheck">
+            ⚠️ Needs Recheck
           </span>
         )}
       </div>
+
+      {/* Verified fields indicator */}
+      {event.verifiedFields && event.verifiedFields.length > 0 && (
+        <div className="verified-fields-strip" title="Fields verified against official source">
+          <span className="field-label">Verified:</span>
+          {event.verifiedFields.map(field => (
+            <span key={field} className="field-tag">✓ {field}</span>
+          ))}
+        </div>
+      )}
 
       {event.description && (
         <p className="card-description">
@@ -133,6 +157,16 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onOpenModal }) => {
         >
           More Info
         </button>
+
+        <a
+          href={reportUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn-report-link"
+          title="Report an error, cancellation, or schedule change"
+        >
+          🚩 Report Issue
+        </a>
       </div>
     </article>
   );

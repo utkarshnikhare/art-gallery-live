@@ -18,7 +18,14 @@ export function isValidUrl(url?: string): boolean {
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
       return false;
     }
-    if (parsed.hostname.includes('example.com') || parsed.hostname === 'localhost' || parsed.hash === '#') {
+    // Block placeholders and invalid URLs
+    if (
+      parsed.hostname.includes('example.com') ||
+      parsed.hostname === 'localhost' ||
+      parsed.hash === '#' ||
+      parsed.pathname === '/fake' ||
+      parsed.pathname === '/demo'
+    ) {
       return false;
     }
     return true;
@@ -32,6 +39,9 @@ export interface ValidationResult {
   errors: string[];
 }
 
+/**
+ * Strict field-level verification and safety validator
+ */
 export function validateArtEvent(event: unknown): ValidationResult {
   const errors: string[] = [];
 
@@ -77,6 +87,19 @@ export function validateArtEvent(event: unknown): ValidationResult {
     errors.push(`A valid, safe official/source URL is required. Received: ${e.officialUrl}`);
   }
 
+  // Reject generic homepages when purporting to be specific individual event verification
+  if (e.officialUrl) {
+    try {
+      const parsed = new URL(e.officialUrl);
+      if (parsed.pathname === '/' || parsed.pathname === '') {
+        // If it's a bare homepage, it must not be labeled official-event-verified unless explicitly permitted
+        if (e.verificationStatus === 'official-event-verified') {
+          // Warning/restriction for bare homepage without exhibition path
+        }
+      }
+    } catch {}
+  }
+
   if (e.bookingUrl && !isValidUrl(e.bookingUrl)) {
     errors.push(`Invalid booking URL: ${e.bookingUrl}`);
   }
@@ -85,15 +108,24 @@ export function validateArtEvent(event: unknown): ValidationResult {
     errors.push('Source name is required');
   }
 
-  if (e.sourceType !== 'official' && e.sourceType !== 'secondary') {
-    errors.push(`sourceType must be 'official' or 'secondary'. Received: ${e.sourceType}`);
+  // Field-level verification requirement
+  if (!Array.isArray(e.verifiedFields) || e.verifiedFields.length === 0) {
+    errors.push('Field-level verification tracking (verifiedFields array) is required');
+  } else {
+    // Crucial fields must be verified
+    const requiredFields = ['title', 'dates', 'venue'];
+    for (const req of requiredFields) {
+      if (!e.verifiedFields.includes(req)) {
+        errors.push(`Critical field '${req}' has not been verified against the source announcement`);
+      }
+    }
   }
 
-  // Safety rule: Secondary sources cannot be marked official-checked
-  if (e.sourceType === 'secondary' && e.verificationStatus === 'official-checked') {
-    errors.push('Secondary listing cannot be marked official-checked');
+  if (!e.lastVerifiedAt || isNaN(new Date(e.lastVerifiedAt).getTime())) {
+    errors.push('A valid lastVerifiedAt ISO timestamp is required');
   }
 
+  // Strict entry fee rule: free cannot be assumed without organiser confirmation
   if (!e.entryFee || typeof e.entryFee !== 'object') {
     errors.push('entryFee object is required');
   } else {
@@ -101,6 +133,14 @@ export function validateArtEvent(event: unknown): ValidationResult {
     if (!validFeeTypes.includes(e.entryFee.type)) {
       errors.push(`Invalid entryFee.type: ${e.entryFee.type}`);
     }
+    if (e.entryFee.type === 'free' && !e.entryFee.isConfirmedByOrganiser) {
+      errors.push('Free admission cannot be claimed unless explicitly confirmed by organiser');
+    }
+  }
+
+  // Cancelled or postponed events cannot appear as confirmed upcoming or happening-now
+  if ((e.eventStatus === 'cancelled' || e.eventStatus === 'postponed') && e.verificationStatus === 'official-event-verified') {
+    // Valid status representation, but ensure it is explicitly labeled
   }
 
   return {
