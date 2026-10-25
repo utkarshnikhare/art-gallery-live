@@ -1,0 +1,44 @@
+name: Daily Art Events Data Sync
+
+on:
+  schedule:
+    # Runs daily at 06:00 UTC (11:30 AM IST)
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-events:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Data Pipeline Ingestion & Verification
+        run: npm run update-data
+
+      - name: Run Integration Tests on Updated Dataset
+        run: npm run test:unit
+
+      - name: Commit Updated Events if Changed
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/data/events.json
+          if git diff --staged --quiet; then
+            echo "No data changes detected. Live feed is up to date."
+          else
+            git commit -m "chore(data): daily verified events sync [skip ci]"
+            git push
+          fi

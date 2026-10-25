@@ -1,0 +1,28 @@
+{
+  "name": "art-gallery-live",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "node tests/run-all-tests.mjs",
+    "test:unit": "npx tsx tests/unit.test.mjs",
+    "test:e2e": "npx tsx tests/e2e.test.mjs",
+    "update-data": "npx tsx scripts/update_events.mjs"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "puppeteer-core": "^24.4.0",
+    "tsx": "^4.23.15",
+    "typescript": "^5.7.3",
+    "vite": "^6.2.0"
+  }
+}
