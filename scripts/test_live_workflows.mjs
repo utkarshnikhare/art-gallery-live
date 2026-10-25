@@ -166,7 +166,10 @@ async function testAllWorkflows() {
 
     if (unconfiguredNotice) {
       // Configure new passcode 8899
-      await page.click('.vault-lock-input', { clickCount: 3 });
+      await page.click('.vault-lock-input');
+      await page.keyboard.down('Control');
+      await page.keyboard.press('A');
+      await page.keyboard.up('Control');
       await page.keyboard.press('Backspace');
       await page.type('.vault-lock-input', '8899');
       
@@ -175,7 +178,7 @@ async function testAllWorkflows() {
         return buttons.find(b => b.textContent.includes('Save Passcode & Unlock'));
       });
       if (saveAndUnlockBtn) await saveAndUnlockBtn.click();
-      await new Promise((r) => setTimeout(r, 350));
+      await new Promise((r) => setTimeout(r, 500));
 
       const isUnlockedAfterConfig = await page.evaluate(() => !document.querySelector('.vault-lock-screen'));
       assertWorkflow('Configuring custom privacy PIN sets passcode and unlocks studio', isUnlockedAfterConfig);
@@ -183,12 +186,12 @@ async function testAllWorkflows() {
       // Lock again with configured passcode
       const lockBtn2 = await page.$('.btn-lock-vault');
       if (lockBtn2) await lockBtn2.click();
-      await new Promise((r) => setTimeout(r, 250));
+      await new Promise((r) => setTimeout(r, 400));
 
       // Test blank passcode
       const unlockSubmit = await page.$('.vault-lock-form button[type="submit"]');
       if (unlockSubmit) await unlockSubmit.click();
-      await new Promise((r) => setTimeout(r, 200));
+      await new Promise((r) => setTimeout(r, 300));
       const blankErrorVisible = await page.evaluate(() => {
         const err = document.querySelector('.vault-lock-card .error-text');
         return err ? err.textContent.includes('cannot be blank') : false;
@@ -196,9 +199,10 @@ async function testAllWorkflows() {
       assertWorkflow('Blank passcode rejected with validation error', blankErrorVisible);
 
       // Test incorrect passcode 0000
+      await page.click('.vault-lock-input');
       await page.type('.vault-lock-input', '0000');
       if (unlockSubmit) await unlockSubmit.click();
-      await new Promise((r) => setTimeout(r, 200));
+      await new Promise((r) => setTimeout(r, 300));
       const incorrectErrorVisible = await page.evaluate(() => {
         const err = document.querySelector('.vault-lock-card .error-text');
         return err ? err.textContent.includes('Incorrect') : false;
@@ -206,21 +210,28 @@ async function testAllWorkflows() {
       assertWorkflow('Incorrect passcode rejects unlock attempt', incorrectErrorVisible);
 
       // Test correct passcode 8899
-      await page.click('.vault-lock-input', { clickCount: 3 });
+      await page.click('.vault-lock-input');
+      await page.keyboard.down('Control');
+      await page.keyboard.press('A');
+      await page.keyboard.up('Control');
       await page.keyboard.press('Backspace');
       await page.type('.vault-lock-input', '8899');
       if (unlockSubmit) await unlockSubmit.click();
-      await new Promise((r) => setTimeout(r, 350));
+      await new Promise((r) => setTimeout(r, 600));
 
       const isUnlockedFinal = await page.evaluate(() => !document.querySelector('.vault-lock-screen'));
       assertWorkflow('Configured passcode restores access to studio workspace', isUnlockedFinal);
     } else {
       // Passcode already configured: test incorrect vs correct
       const unlockSubmit = await page.$('.vault-lock-form button[type="submit"]');
-      await page.click('.vault-lock-input', { clickCount: 3 });
+      await page.click('.vault-lock-input');
+      await page.keyboard.down('Control');
+      await page.keyboard.press('A');
+      await page.keyboard.up('Control');
+      await page.keyboard.press('Backspace');
       await page.type('.vault-lock-input', '0000');
       if (unlockSubmit) await unlockSubmit.click();
-      await new Promise((r) => setTimeout(r, 200));
+      await new Promise((r) => setTimeout(r, 300));
 
       const stillLocked = await page.evaluate(() => !!document.querySelector('.vault-lock-screen'));
       assertWorkflow('Incorrect passcode rejects unlock attempt', stillLocked);
