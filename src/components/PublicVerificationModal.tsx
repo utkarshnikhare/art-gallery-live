@@ -121,11 +121,28 @@ export const PublicVerificationModal: React.FC<PublicVerificationModalProps> = (
                 <code className="hash-code">{matchedCert.sha256Fingerprint}</code>
               </div>
 
+              {matchedCert.status === 'revoked' && (
+                <div className="revocation-warning-banner">
+                  <h4>⚠️ CERTIFICATE REVOKED</h4>
+                  <p>
+                    <strong>Revocation Reason:</strong> {matchedCert.revocationReason || 'Revoked by issuing artist/studio.'}
+                  </p>
+                  {matchedCert.revokedAt && (
+                    <p><strong>Revoked On:</strong> {new Date(matchedCert.revokedAt).toLocaleString()}</p>
+                  )}
+                  {matchedCert.supersededByCertificateId && (
+                    <p>
+                      <strong>Replacement Certificate:</strong>{' '}
+                      <span className="superseded-link">{matchedCert.supersededByCertificateId}</span>
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div className="verify-blockchain-status">
                 <strong>Provenance Authority:</strong> {matchedCert.issuer}
                 <p className="verify-disclaimer">
-                  This record establishes that the specified artwork metadata was cryptographically hashed and cataloged
-                  by the artist at issuance. It distinguishes internal provenance records from independent legal title claims.
+                  {matchedCert.legalNotice || "LEGAL TITLE NOTICE: This cryptographic digital certificate attests to the artwork attributes recorded by the artist's studio vault at issuance date. It establishes immutable cryptographic provenance but does not constitute a government-registered copyright, statutory title deed, or registered trademark without formal legal contracts of transfer."}
                 </p>
               </div>
             </div>

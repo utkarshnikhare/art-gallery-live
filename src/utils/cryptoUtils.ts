@@ -1,10 +1,19 @@
 /**
- * Cryptographic Utility for Document Fingerprinting and Digital Certificate Verification
- * Complies with FIPS 180-4 standard SHA-256 digest specification.
+ * Cryptographic Utility for Document Fingerprinting, Authenticated Encryption,
+ * and Digital Certificate Verification.
+ * Complies with FIPS 180-4 standard SHA-256 digest specification and
+ * NIST SP 800-38D AES-GCM 256-bit authenticated encryption.
  */
 
-// Pure TypeScript SHA-256 implementation ensuring deterministic operation in any environment
-function sha256Pure(str: string): string {
+import { EncryptedStoragePayload, DigitalCertificate } from '../types';
+
+export const PROVENANCE_LEGAL_NOTICE =
+  "LEGAL TITLE NOTICE: This cryptographic digital certificate attests to the artwork attributes recorded by the artist's studio vault at issuance date. It establishes immutable cryptographic provenance but does not constitute a government-registered copyright, statutory title deed, or registered trademark without formal legal contracts of transfer.";
+
+/**
+ * Pure TypeScript SHA-256 implementation ensuring deterministic operation in any environment
+ */
+export function sha256(str: string): string {
   function rightRotate(value: number, amount: number) {
     return (value >>> amount) | (value << (32 - amount));
   }
@@ -91,8 +100,122 @@ function sha256Pure(str: string): string {
   return result;
 }
 
+// Helper: Uint8Array <-> Base64 conversion
+export function uint8ArrayToBase64(bytes: Uint8Array): string {
+  let binary = '';
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+export function base64ToUint8Array(base64: string): Uint8Array {
+  const binaryString = atob(base64);
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+}
+
 /**
- * Generate SHA-256 fingerprint from artwork metadata
+ * Derive AES-GCM-256 Key using PBKDF2 with 100,000 SHA-256 iterations
+ */
+async function deriveKey(passphrase: string, salt: Uint8Array): Promise<CryptoKey> {
+  const enc = new TextEncoder();
+  const baseKey = await globalThis.crypto.subtle.importKey(
+    'raw',
+    enc.encode(passphrase),
+    'PBKDF2',
+    false,
+    ['deriveKey']
+  );
+
+  return globalThis.crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: salt as any,
+      iterations: 100000,
+      hash: 'SHA-256',
+    },
+    baseKey,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+/**
+ * Authenticated Encryption using AES-GCM-256 with unique 12-byte IV and 16-byte PBKDF2 Salt
+ */
+export async function encryptAesGcm(plainText: string, passphrase: string): Promise<EncryptedStoragePayload> {
+  if (!passphrase || passphrase.trim().length < 6) {
+    throw new Error('Vault passphrase must be at least 6 characters long.');
+  }
+
+  const salt = globalThis.crypto.getRandomValues(new Uint8Array(16));
+  const iv = globalThis.crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveKey(passphrase, salt);
+
+  const enc = new TextEncoder();
+  const encryptedBuf = await globalThis.crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv: iv as any },
+    key,
+    enc.encode(plainText)
+  );
+
+  return {
+    version: '2.0.0',
+    encrypted: true,
+    algorithm: 'AES-GCM-256',
+    iterations: 100000,
+    salt: uint8ArrayToBase64(salt),
+    iv: uint8ArrayToBase64(iv),
+    ciphertext: uint8ArrayToBase64(new Uint8Array(encryptedBuf)),
+  };
+}
+
+/**
+ * Authenticated Decryption using AES-GCM-256
+ * Automatically verifies cryptographic authentication tag; throws on wrong key or tampered ciphertext.
+ */
+export async function decryptAesGcm(payload: EncryptedStoragePayload, passphrase: string): Promise<string> {
+  if (!payload || !payload.ciphertext || !payload.iv || !payload.salt) {
+    throw new Error('Malformed encrypted payload: missing required ciphertext, IV, or salt.');
+  }
+
+  const salt = base64ToUint8Array(payload.salt);
+  const iv = base64ToUint8Array(payload.iv);
+  const ciphertextBytes = base64ToUint8Array(payload.ciphertext);
+
+  const key = await deriveKey(passphrase, salt);
+
+  try {
+    const decryptedBuf = await globalThis.crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: iv as any },
+      key,
+      ciphertextBytes as any
+    );
+    const dec = new TextDecoder();
+    return dec.decode(decryptedBuf);
+  } catch (err) {
+    throw new Error('Decryption failed: Incorrect passphrase or corrupted ciphertext payload.');
+  }
+}
+
+/**
+ * Generate canonical SHA-256 fingerprint from artwork metadata
+ * Fields covered by the fingerprint:
+ * - TITLE
+ * - ARTIST
+ * - YEAR
+ * - MEDIUM
+ * - DIMENSIONS (Height x Width x Depth Unit)
+ * - EDITION
+ * Non-covered fields (e.g. storage location, internal tags, framing notes)
+ * can change without invalidating the core artwork authenticity fingerprint.
  */
 export function generateArtworkFingerprint(meta: {
   title: string;
@@ -114,7 +237,7 @@ export function generateArtworkFingerprint(meta: {
     `SALT=${meta.uniqueSalt || 'MK-SECURE-2026'}`
   ].join('|');
 
-  return sha256Pure(canonicalString);
+  return sha256(canonicalString);
 }
 
 /**
@@ -134,4 +257,11 @@ export function verifyArtworkFingerprint(
 ): boolean {
   const calculated = generateArtworkFingerprint(meta);
   return calculated.toLowerCase() === storedFingerprint.toLowerCase();
+}
+
+/**
+ * Helper to check certificate validity status
+ */
+export function isCertificateValid(cert: DigitalCertificate): boolean {
+  return cert.status === 'valid';
 }

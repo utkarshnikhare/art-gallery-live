@@ -308,17 +308,24 @@ export const App: React.FC = () => {
     });
   };
 
-  const handleRevokeCertificate = (certificateId: string) => {
+  const handleRevokeCertificate = (certificateId: string, reason: string = 'Revoked by artist') => {
     updateWorkspace((prev) => {
       const nextCerts = prev.certificates.map((c) =>
-        c.certificateId === certificateId ? { ...c, status: 'revoked' as const } : c
+        c.certificateId === certificateId
+          ? {
+              ...c,
+              status: 'revoked' as const,
+              revocationReason: reason,
+              revokedAt: new Date().toISOString(),
+            }
+          : c
       );
       return StorageService.addAuditLog(
         { ...prev, certificates: nextCerts },
         'UPDATE',
         'CERTIFICATE',
         certificateId,
-        `Revoked certificate: ${certificateId}`
+        `Revoked certificate ${certificateId}: ${reason}`
       );
     });
   };

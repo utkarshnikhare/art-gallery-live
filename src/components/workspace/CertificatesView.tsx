@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { DigitalCertificate, UserArtwork } from '../../types';
-import { generateArtworkFingerprint } from '../../utils/cryptoUtils';
+import { generateArtworkFingerprint, PROVENANCE_LEGAL_NOTICE } from '../../utils/cryptoUtils';
 import { generateQrSvgDataUri } from '../../utils/qrUtils';
 
 interface CertificatesViewProps {
@@ -8,7 +8,7 @@ interface CertificatesViewProps {
   inventory: UserArtwork[];
   artistName: string;
   onIssueCertificate: (cert: DigitalCertificate) => void;
-  onRevokeCertificate: (certificateId: string) => void;
+  onRevokeCertificate: (certificateId: string, reason: string) => void;
 }
 
 export const CertificatesView: React.FC<CertificatesViewProps> = ({
@@ -20,6 +20,10 @@ export const CertificatesView: React.FC<CertificatesViewProps> = ({
 }) => {
   const [isIssueModalOpen, setIsIssueModalOpen] = useState(false);
   const [selectedCertForPrint, setSelectedCertForPrint] = useState<DigitalCertificate | null>(null);
+
+  // Revocation Modal State
+  const [revokingCertId, setRevokingCertId] = useState<string | null>(null);
+  const [revocationReason, setRevocationReason] = useState('Clerical error in dimensions or edition');
 
   const [selectedArtworkId, setSelectedArtworkId] = useState('');
   const [editionText, setEditionText] = useState('Original 1 of 1');
@@ -69,6 +73,7 @@ export const CertificatesView: React.FC<CertificatesViewProps> = ({
       sha256Fingerprint: sha256,
       verificationUrl: verifyUrl,
       status: 'valid',
+      legalNotice: PROVENANCE_LEGAL_NOTICE,
       blockchainAnchor: {
         isAnchored: false,
         note: 'Cryptographically hashed and verified in platform vault. Optional testnet anchoring available on demand.',
@@ -77,6 +82,14 @@ export const CertificatesView: React.FC<CertificatesViewProps> = ({
 
     onIssueCertificate(newCertificate);
     setIsIssueModalOpen(false);
+  };
+
+  const handleConfirmRevocation = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!revokingCertId) return;
+    onRevokeCertificate(revokingCertId, revocationReason);
+    setRevokingCertId(null);
+    setRevocationReason('Clerical error in dimensions or edition');
   };
 
   return (
@@ -107,8 +120,8 @@ export const CertificatesView: React.FC<CertificatesViewProps> = ({
           <strong>Authenticity & Legal Distinction Standard:</strong>
           <p>
             Morrowkind uses industry-standard <strong>SHA-256 cryptographic hashing</strong> to freeze artwork metadata
-            against alteration. A digital certificate or blockchain transaction proves data integrity at a point in time;
-            it is not an automatic substitute for formal legal title.
+            against alteration. A digital certificate establishes immutable cryptographic provenance at a point in time;
+            it is not an automatic substitute for formal legal title or statutory copyright registration.
           </p>
         </div>
       </div>
@@ -134,49 +147,57 @@ export const CertificatesView: React.FC<CertificatesViewProps> = ({
           {certificates.map((cert) => {
             const qrUri = generateQrSvgDataUri(cert.verificationUrl, 160);
             return (
-              <article key={cert.certificateId} className={`certificate-card ${cert.status}`}>
-                <div className="cert-card-top">
-                  <div>
-                    <span className="cert-id-badge">{cert.certificateId}</span>
-                    <h3 className="cert-title">{cert.artworkTitle}</h3>
-                    <div className="cert-artist">By <strong>{cert.artistName}</strong> ({cert.yearCreated})</div>
+              <article key={cert.certificateId} className={`cert-card ${cert.status === 'revoked' ? 'cert-revoked' : ''}`}>
+                <div className="cert-card-header">
+                  <div className="cert-status-tag">
+                    <span className={`status-pill ${cert.status === 'valid' ? 'pill-paid' : 'pill-refunded'}`}>
+                      {cert.status === 'valid' ? '✓ ACTIVE' : '⚠️ REVOKED'}
+                    </span>
+                    <span className="cert-id-text">{cert.certificateId}</span>
                   </div>
-                  <span className={`status-pill ${cert.status === 'valid' ? 'available' : 'destroyed'}`}>
-                    {cert.status.toUpperCase()}
-                  </span>
+                  <span className="cert-date">{cert.issueDate}</span>
                 </div>
 
-                <div className="cert-details-grid">
-                  <div>
-                    <span className="cert-label">Medium:</span>
-                    <span className="cert-val">{cert.medium}</span>
+                <div className="cert-card-body">
+                  <h3 className="cert-artwork-title">{cert.artworkTitle}</h3>
+                  <div className="cert-meta-line">
+                    <span>{cert.artistName}</span> • <span>{cert.yearCreated}</span>
                   </div>
-                  <div>
-                    <span className="cert-label">Dimensions:</span>
-                    <span className="cert-val">{cert.dimensionsText}</span>
+                  <div className="cert-specs-pill">
+                    {cert.medium} • {cert.dimensionsText} • {cert.editionText}
                   </div>
-                  <div>
-                    <span className="cert-label">Edition:</span>
-                    <span className="cert-val">{cert.editionText}</span>
-                  </div>
-                  <div>
-                    <span className="cert-label">Issued:</span>
-                    <span className="cert-val">{cert.issueDate}</span>
-                  </div>
-                </div>
 
-                {/* SHA-256 Fingerprint Display */}
-                <div className="sha-hash-strip">
-                  <span className="hash-label">SHA-256 Cryptographic Fingerprint:</span>
-                  <code className="hash-code">{cert.sha256Fingerprint}</code>
-                </div>
+                  {cert.status === 'revoked' && (
+                    <div className="revocation-card-alert">
+                      <strong>Revoked:</strong> {cert.revocationReason || 'Revoked by artist'}
+                    </div>
+                  )}
 
-                {/* QR Code and Actions */}
-                <div className="cert-qr-row">
-                  <img src={qrUri} alt="Verification QR Code" className="cert-qr-img" width="80" height="80" />
-                  <div className="cert-qr-info">
-                    <span className="qr-lead">Scan to verify provenance live</span>
-                    <a href={cert.verificationUrl} target="_blank" rel="noopener noreferrer" className="verify-link">
+                  {/* SHA-256 Digest Box */}
+                  <div className="cert-hash-box">
+                    <div className="hash-header">
+                      <span>SHA-256 Fingerprint:</span>
+                      <button
+                        type="button"
+                        className="copy-btn"
+                        onClick={() => navigator.clipboard.writeText(cert.sha256Fingerprint)}
+                        title="Copy Hash"
+                      >
+                        📋 Copy
+                      </button>
+                    </div>
+                    <code className="hash-text">{cert.sha256Fingerprint}</code>
+                  </div>
+
+                  {/* Offline SVG QR Code Preview */}
+                  <div className="cert-qr-container">
+                    <img src={qrUri} alt={`QR Code for ${cert.certificateId}`} width="100" height="100" />
+                    <a
+                      href={cert.verificationUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="qr-verify-link"
+                    >
                       Public Verification Link ↗
                     </a>
                   </div>
@@ -194,19 +215,57 @@ export const CertificatesView: React.FC<CertificatesViewProps> = ({
                     <button
                       type="button"
                       className="btn btn-danger btn-xs"
-                      onClick={() => {
-                        if (window.confirm(`Revoke certificate ${cert.certificateId}? This action will mark it as revoked.`)) {
-                          onRevokeCertificate(cert.certificateId);
-                        }
-                      }}
+                      onClick={() => setRevokingCertId(cert.certificateId)}
                     >
-                      Revoke
+                      Revoke Certificate
                     </button>
                   )}
                 </div>
               </article>
             );
           })}
+        </div>
+      )}
+
+      {/* Revocation Modal */}
+      {revokingCertId && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true">
+          <div className="modal-content modal-sm">
+            <div className="modal-header">
+              <h3>Revoke Certificate of Authenticity</h3>
+              <button type="button" className="modal-close-btn" onClick={() => setRevokingCertId(null)}>×</button>
+            </div>
+            <form onSubmit={handleConfirmRevocation} className="modal-form">
+              <p className="modal-intro">
+                Revoking certificate <strong>{revokingCertId}</strong> marks it as permanently void in the public registry.
+                Enter the reason for revocation:
+              </p>
+
+              <div className="form-field">
+                <label htmlFor="revReason">Revocation Reason *</label>
+                <select
+                  id="revReason"
+                  value={revocationReason}
+                  onChange={(e) => setRevocationReason(e.target.value)}
+                >
+                  <option value="Clerical error in dimensions or edition">Clerical error in dimensions or edition</option>
+                  <option value="Physical artwork damaged or destroyed">Physical artwork damaged or destroyed</option>
+                  <option value="Artwork re-worked or re-titled by artist">Artwork re-worked or re-titled by artist</option>
+                  <option value="Superseded by replacement certificate">Superseded by replacement certificate</option>
+                  <option value="Other / Contractual dispute">Other / Contractual dispute</option>
+                </select>
+              </div>
+
+              <div className="modal-footer-actions">
+                <button type="button" className="btn btn-secondary" onClick={() => setRevokingCertId(null)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-danger">
+                  Confirm Revocation
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
@@ -289,6 +348,10 @@ export const CertificatesView: React.FC<CertificatesViewProps> = ({
             {/* Formal Certificate Layout */}
             <div className="official-coa-document">
               <div className="coa-border-frame">
+                {selectedCertForPrint.status === 'revoked' && (
+                  <div className="revocation-watermark">REVOKED - VOID</div>
+                )}
+
                 <div className="coa-header">
                   <div className="coa-brand">MORROWKIND</div>
                   <h1 className="coa-main-title">Certificate of Authenticity</h1>
@@ -345,6 +408,10 @@ export const CertificatesView: React.FC<CertificatesViewProps> = ({
                     />
                     <span className="coa-qr-label">Scan to Verify Provenance</span>
                   </div>
+                </div>
+
+                <div className="coa-legal-notice">
+                  {selectedCertForPrint.legalNotice || PROVENANCE_LEGAL_NOTICE}
                 </div>
 
                 <div className="coa-signatures">

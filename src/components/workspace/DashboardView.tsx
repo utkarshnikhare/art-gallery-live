@@ -23,22 +23,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const soldArtworks = state.inventory.filter((a) => a.availability === 'sold').length;
   const onExhibitionCount = state.inventory.filter((a) => a.availability === 'on-exhibition').length;
   
-  // Available Inventory Valuation (sum of list prices of available works)
+  // Available Inventory Valuation (sum of list prices of available works - UNREALIZED ESTIMATE)
   const inventoryValuation = state.inventory
     .filter((a) => a.availability === 'available')
     .reduce((sum, a) => sum + (a.listPrice || 0), 0);
 
-  // 2. Sales & Revenue Metrics (derived strictly from actual recorded transactions)
-  const totalSalesCount = state.sales.length;
-  const grossRevenue = state.sales.reduce((sum, s) => sum + (s.grossAmount || 0), 0);
-  const totalCommissionsPaid = state.sales.reduce((sum, s) => sum + (s.galleryCommissionAmount || 0), 0);
-  const netProceeds = state.sales.reduce((sum, s) => sum + (s.netProceeds || 0), 0);
+  // 2. Sales & Revenue Metrics (derived strictly from confirmed, non-refunded transactions)
+  const nonRefundedSales = state.sales.filter((s) => s.paymentStatus !== 'Refunded');
+  const totalSalesCount = nonRefundedSales.length;
+  const grossRevenue = nonRefundedSales.reduce((sum, s) => sum + (s.grossAmount || 0), 0);
+  const totalCommissionsPaid = nonRefundedSales.reduce((sum, s) => sum + (s.galleryCommissionAmount || 0), 0);
+  const netProceeds = nonRefundedSales.reduce((sum, s) => sum + (s.netProceeds || 0), 0);
   const averageSalePrice = totalSalesCount > 0 ? Math.round(grossRevenue / totalSalesCount) : 0;
   
-  // Outstanding pending payments
-  const pendingPayments = state.sales
-    .filter((s) => s.paymentStatus === 'Pending' || s.paymentStatus === 'Partially Paid')
-    .reduce((sum, s) => sum + (s.netProceeds || 0), 0);
+  // Outstanding accounts receivable (pending payments and unpaid partial balances)
+  const pendingPayments = state.sales.reduce((sum, s) => {
+    if (s.paymentStatus === 'Pending') return sum + (s.netProceeds || 0);
+    if (s.paymentStatus === 'Partially Paid') return sum + (s.balanceDue || 0);
+    return sum;
+  }, 0);
 
   // 3. Exhibition Cost & Profitability Metrics
   const totalExhibitionExpenses = state.exhibitions.reduce((sum, e) => sum + (e.totalExpenses || 0), 0);
@@ -128,14 +131,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <div className="metrics-summary-grid">
         <div className="metric-card gold-border">
           <div className="metric-header">
-            <span className="metric-title">Available Inventory Valuation</span>
-            <span className="metric-badge">Floor / List</span>
+            <span className="metric-title">Estimated Inventory Valuation</span>
+            <span className="metric-badge">Unrealized Potential</span>
           </div>
           <div className="metric-value">
             {currency} {inventoryValuation.toLocaleString()}
           </div>
           <div className="metric-footer">
-            <span>{availableArtworks} works available</span>
+            <span>List price of {availableArtworks} available works</span>
             <span>•</span>
             <span>{totalArtworks} total in catalog</span>
           </div>

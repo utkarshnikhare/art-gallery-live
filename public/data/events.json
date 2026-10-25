@@ -2,7 +2,7 @@
   "metadata": {
     "appName": "Art Gallery Live",
     "version": "1.2.0",
-    "lastSuccessfullyUpdated": "2026-10-25T08:45:32.528Z",
+    "lastSuccessfullyUpdated": "2026-10-25T09:20:56.810Z",
     "totalEvents": 17,
     "currentEvents": 10,
     "upcomingEvents": 7,
@@ -32,7 +32,7 @@
         "amountText": "Free Public Admission",
         "isConfirmedByOrganiser": true
       },
-      "officialUrl": "https://gallerychemould.com/exhibitions/",
+      "officialUrl": "https://gallerychemould.com/exhibitions/spectral-frequencies-by-reena-saini-kallat/",
       "sourceName": "Chemould Prescott Road",
       "sourceType": "official-institution",
       "verificationStatus": "official-event-verified",
@@ -45,7 +45,7 @@
         "organiser",
         "timing"
       ],
-      "lastCheckedAt": "2026-10-25T08:45:32.528Z",
+      "lastCheckedAt": "2026-10-25T09:20:56.806Z",
       "lastVerifiedAt": "2026-10-25T13:55:00+05:30",
       "firstSeenAt": "2026-10-24T00:00:00+05:30",
       "lastUpdatedAt": "2026-10-25T13:55:00+05:30",
@@ -73,7 +73,7 @@
         "amountText": "Free Public Admission",
         "isConfirmedByOrganiser": true
       },
-      "officialUrl": "https://vhc.art/exhibitions",
+      "officialUrl": "https://vhc.art/exhibitions/where-the-body-begins-body/",
       "sourceName": "Vida Heydari Contemporary",
       "sourceType": "official-institution",
       "verificationStatus": "official-event-verified",
@@ -86,7 +86,7 @@
         "organiser",
         "timing"
       ],
-      "lastCheckedAt": "2026-10-25T08:45:32.528Z",
+      "lastCheckedAt": "2026-10-25T09:20:56.810Z",
       "lastVerifiedAt": "2026-10-25T13:55:00+05:30",
       "firstSeenAt": "2026-10-24T00:00:00+05:30",
       "lastUpdatedAt": "2026-10-25T13:55:00+05:30",
@@ -114,7 +114,7 @@
         "amountText": "Free Public Admission",
         "isConfirmedByOrganiser": true
       },
-      "officialUrl": "https://vhc.art/exhibitions",
+      "officialUrl": "https://vhc.art/exhibitions/not-in-plain-sight/",
       "sourceName": "Vida Heydari Contemporary",
       "sourceType": "official-institution",
       "verificationStatus": "official-event-verified",
@@ -126,7 +126,7 @@
         "admissionFee",
         "organiser"
       ],
-      "lastCheckedAt": "2026-10-25T08:45:32.528Z",
+      "lastCheckedAt": "2026-10-25T09:20:56.810Z",
       "lastVerifiedAt": "2026-10-25T13:55:00+05:30",
       "firstSeenAt": "2026-10-25T13:55:00+05:30",
       "lastUpdatedAt": "2026-10-25T13:55:00+05:30",
@@ -154,7 +154,7 @@
         "amountText": "Free Public Admission",
         "isConfirmedByOrganiser": true
       },
-      "officialUrl": "https://www.tarq.in/",
+      "officialUrl": "https://www.tarq.in/exhibitions/home-sick-by-garima-gupta/",
       "sourceName": "TARQ Mumbai",
       "sourceType": "official-institution",
       "verificationStatus": "official-event-verified",
@@ -167,7 +167,7 @@
         "organiser",
         "timing"
       ],
-      "lastCheckedAt": "2026-10-25T08:45:32.528Z",
+      "lastCheckedAt": "2026-10-25T09:20:56.810Z",
       "lastVerifiedAt": "2026-10-25T13:55:00+05:30",
       "firstSeenAt": "2026-10-25T13:30:00+05:30",
       "lastUpdatedAt": "2026-10-25T13:55:00+05:30",
@@ -195,7 +195,7 @@
         "amountText": "Free Public Admission",
         "isConfirmedByOrganiser": true
       },
-      "officialUrl": "https://www.taoartgallery.com/exhibitions/",
+      "officialUrl": "https://www.taoartgallery.com/exhibitions/the-shapes-of-elsewhere/",
       "sourceName": "Tao Art Gallery",
       "sourceType": "official-institution",
       "verificationStatus": "official-event-verified",
@@ -207,7 +207,7 @@
         "admissionFee",
         "organiser"
       ],
-      "lastCheckedAt": "2026-10-25T08:45:32.528Z",
+      "lastCheckedAt": "2026-10-25T09:20:56.810Z",
       "lastVerifiedAt": "2026-10-25T13:55:00+05:30",
       "firstSeenAt": "2026-10-25T13:55:00+05:30",
       "lastUpdatedAt": "2026-10-25T13:55:00+05:30",
@@ -235,7 +235,7 @@
         "amountText": "Free Public Admission",
         "isConfirmedByOrganiser": true
       },
-      "officialUrl": "https://www.project88.in/exhibitions/",
+      "officialUrl": "https://www.project88.in/exhibitions/sarnath-banerjee-badly-remembered-things/",
       "sourceName": "Project 88",
       "sourceType": "official-institution",
       "verificationStatus": "official-event-verified",
@@ -247,7 +247,7 @@
         "admissionFee",
         "organiser"
       ],
-      "lastCheckedAt": "2026-10-25T08:45:32.528Z",
+      "lastCheckedAt": "2026-10-25T09:20:56.810Z",
       "lastVerifiedAt": "2026-10-25T13:55:00+05:30",
       "firstSeenAt": "2026-10-25T13:55:00+05:30",
       "lastUpdatedAt": "2026-10-25T13:55:00+05:30",
@@ -275,7 +275,7 @@
         "amountText": "Free Public Admission",
         "isConfirmedByOrganiser": true
       },
-      "officialUrl": "https://akaraart.com/",
+      "officialUrl": "https://akaraart.com/exhibitions/from-line-to-landscape/",
       "sourceName": "Akara Modern",
       "sourceType": "official-institution",
       "verificationStatus": "official-event-verified",
@@ -287,7 +287,7 @@
         "admissionFee",
         "organiser"
       ],
-      "lastCheckedAt": "2026-10-25T08:45:32.528Z",
+      "lastCheckedAt": "2026-10-25T09:20:56.810Z",
       "lastVerifiedAt": "2026-10-25T13:55:00+05:30",
       "firstSeenAt": "2026-10-25T13:55:00+05:30",
       "lastUpdatedAt": "2026-10-25T13:55:00+05:30",
@@ -315,7 +315,7 @@
         "amountText": "CSMVS Museum entry applies (₹150 adults / ₹50 students)",
         "isConfirmedByOrganiser": true
       },
-      "officialUrl": "https://jnaf.org/",
+      "officialUrl": "https://jnaf.org/exhibition/the-looking-glass/",
       "sourceName": "Jehangir Nicholson Art Foundation",
       "sourceType": "official-institution",
       "verificationStatus": "official-event-verified",
@@ -328,7 +328,7 @@
         "organiser",
         "timing"
       ],
-      "lastCheckedAt": "2026-10-25T08:45:32.528Z",
+      "lastCheckedAt": "2026-10-25T09:20:56.810Z",
       "lastVerifiedAt": "2026-10-25T13:55:00+05:30",
       "firstSeenAt": "2026-10-25T13:30:00+05:30",
       "lastUpdatedAt": "2026-10-25T13:55:00+05:30",
@@ -357,7 +357,7 @@
         "isConfirmedByOrganiser": true
       },
       "bookingUrl": "https://www.nmacc.com/",
-      "officialUrl": "https://www.nmacc.com/",
+      "officialUrl": "https://www.nmacc.com/events/second-nature-by-superblue",
       "sourceName": "NMACC Art House",
       "sourceType": "official-institution",
       "verificationStatus": "official-event-verified",
@@ -370,7 +370,7 @@
         "bookingUrl",
         "organiser"
       ],
-      "lastCheckedAt": "2026-10-25T08:45:32.528Z",
+      "lastCheckedAt": "2026-10-25T09:20:56.810Z",
       "lastVerifiedAt": "2026-10-25T13:55:00+05:30",
       "firstSeenAt": "2026-06-01T00:00:00+05:30",
       "lastUpdatedAt": "2026-10-25T13:55:00+05:30",
@@ -410,7 +410,7 @@
         "admissionFee",
         "organiser"
       ],
-      "lastCheckedAt": "2026-10-25T08:45:32.528Z",
+      "lastCheckedAt": "2026-10-25T09:20:56.810Z",
       "lastVerifiedAt": "2026-10-25T13:55:00+05:30",
       "firstSeenAt": "2026-10-25T13:30:00+05:30",
       "lastUpdatedAt": "2026-10-25T13:55:00+05:30",
@@ -450,7 +450,7 @@
         "admissionFee",
         "organiser"
       ],
-      "lastCheckedAt": "2026-10-25T08:45:32.528Z",
+      "lastCheckedAt": "2026-10-25T09:20:56.810Z",
       "lastVerifiedAt": "2026-10-25T13:55:00+05:30",
       "firstSeenAt": "2026-10-25T13:30:00+05:30",
       "lastUpdatedAt": "2026-10-25T13:55:00+05:30",
@@ -492,7 +492,7 @@
         "bookingUrl",
         "organiser"
       ],
-      "lastCheckedAt": "2026-10-25T08:45:32.528Z",
+      "lastCheckedAt": "2026-10-25T09:20:56.810Z",
       "lastVerifiedAt": "2026-10-25T13:55:00+05:30",
       "firstSeenAt": "2026-10-25T13:30:00+05:30",
       "lastUpdatedAt": "2026-10-25T13:55:00+05:30",
@@ -520,7 +520,7 @@
         "amountText": "Free Public Admission",
         "isConfirmedByOrganiser": true
       },
-      "officialUrl": "https://www.knma.in/",
+      "officialUrl": "https://www.knma.in/exhibitions/in-rhythm/",
       "sourceName": "Kiran Nadar Museum of Art",
       "sourceType": "official-institution",
       "verificationStatus": "official-event-verified",
@@ -532,7 +532,7 @@
         "admissionFee",
         "organiser"
       ],
-      "lastCheckedAt": "2026-10-25T08:45:32.528Z",
+      "lastCheckedAt": "2026-10-25T09:20:56.810Z",
       "lastVerifiedAt": "2026-10-25T13:55:00+05:30",
       "firstSeenAt": "2026-09-09T00:00:00+05:30",
       "lastUpdatedAt": "2026-10-25T13:55:00+05:30",
@@ -560,7 +560,7 @@
         "amountText": "Free Public Admission",
         "isConfirmedByOrganiser": true
       },
-      "officialUrl": "https://www.knma.in/",
+      "officialUrl": "https://www.knma.in/exhibitions/inheritors-of-earth/",
       "sourceName": "Kiran Nadar Museum of Art",
       "sourceType": "official-institution",
       "verificationStatus": "official-event-verified",
@@ -572,7 +572,7 @@
         "admissionFee",
         "organiser"
       ],
-      "lastCheckedAt": "2026-10-25T08:45:32.528Z",
+      "lastCheckedAt": "2026-10-25T09:20:56.810Z",
       "lastVerifiedAt": "2026-10-25T13:55:00+05:30",
       "firstSeenAt": "2026-09-09T00:00:00+05:30",
       "lastUpdatedAt": "2026-10-25T13:55:00+05:30",
@@ -600,7 +600,7 @@
         "amountText": "₹150 standard admission",
         "isConfirmedByOrganiser": true
       },
-      "officialUrl": "https://map-india.org/",
+      "officialUrl": "https://map-india.org/exhibitions/a-moving-line/",
       "sourceName": "Museum of Art & Photography",
       "sourceType": "official-institution",
       "verificationStatus": "official-event-verified",
@@ -612,7 +612,7 @@
         "admissionFee",
         "organiser"
       ],
-      "lastCheckedAt": "2026-10-25T08:45:32.528Z",
+      "lastCheckedAt": "2026-10-25T09:20:56.810Z",
       "lastVerifiedAt": "2026-10-25T13:55:00+05:30",
       "firstSeenAt": "2026-07-25T00:00:00+05:30",
       "lastUpdatedAt": "2026-10-25T13:55:00+05:30",
@@ -641,7 +641,7 @@
         "isConfirmedByOrganiser": true
       },
       "bookingUrl": "https://www.tate.org.uk/",
-      "officialUrl": "https://www.tate.org.uk/",
+      "officialUrl": "https://www.tate.org.uk/whats-on/tate-modern/exhibition/julio-le-parc",
       "sourceName": "Tate Modern",
       "sourceType": "official-institution",
       "verificationStatus": "official-event-verified",
@@ -654,7 +654,7 @@
         "bookingUrl",
         "organiser"
       ],
-      "lastCheckedAt": "2026-10-25T08:45:32.528Z",
+      "lastCheckedAt": "2026-10-25T09:20:56.810Z",
       "lastVerifiedAt": "2026-10-25T13:55:00+05:30",
       "firstSeenAt": "2026-10-01T00:00:00+01:00",
       "lastUpdatedAt": "2026-10-25T13:55:00+05:30",
@@ -683,7 +683,7 @@
         "isConfirmedByOrganiser": true
       },
       "bookingUrl": "https://www.tate.org.uk/",
-      "officialUrl": "https://www.tate.org.uk/",
+      "officialUrl": "https://www.tate.org.uk/whats-on/tate-britain/exhibition/vanessa-bell-duncan-grant",
       "sourceName": "Tate Britain",
       "sourceType": "official-institution",
       "verificationStatus": "official-event-verified",
@@ -696,7 +696,7 @@
         "bookingUrl",
         "organiser"
       ],
-      "lastCheckedAt": "2026-10-25T08:45:32.528Z",
+      "lastCheckedAt": "2026-10-25T09:20:56.810Z",
       "lastVerifiedAt": "2026-10-25T13:55:00+05:30",
       "firstSeenAt": "2026-10-25T13:30:00+05:30",
       "lastUpdatedAt": "2026-10-25T13:55:00+05:30",

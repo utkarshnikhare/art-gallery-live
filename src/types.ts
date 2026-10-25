@@ -384,7 +384,10 @@ export interface SaleTransaction {
   taxAmount: number;
   shippingAmount: number;
   otherExpenses: number;
-  netProceeds: number; // calculated: gross - commission - discount - otherExpenses
+  netProceeds: number; // calculated: (gross - discount) - commission - otherExpenses
+  amountReceived?: number; // Actual funds collected so far (for partial payments)
+  balanceDue?: number; // Outstanding receivable: max(0, gross - discount - (amountReceived || 0))
+  refundAmount?: number; // If paymentStatus === 'Refunded', amount returned to buyer
   currency: string;
   paymentStatus: PaymentStatus;
   paymentDate?: string;
@@ -474,6 +477,10 @@ export interface DigitalCertificate {
   sha256Fingerprint: string; // Cryptographic SHA-256 hash of title, artist, year, medium, dimensions
   verificationUrl: string;
   status: 'valid' | 'revoked' | 'superseded';
+  revokedAt?: string;
+  revocationReason?: string;
+  supersededByCertificateId?: string;
+  legalNotice?: string;
   blockchainAnchor: {
     isAnchored: boolean;
     network?: string; // e.g. 'Polygon Amoy Testnet'
@@ -525,11 +532,23 @@ export interface ArtistProfileSettings {
   defaultMarkupPercent: number; // e.g. 100% or 50% gallery split
   vaultProtected: boolean;
   vaultPasscodeHash?: string;
+  vaultPassphraseSalt?: string;
+  encryptionAtRest?: boolean;
   supabaseConfig?: {
     configured: boolean;
     url?: string;
     note: string;
   };
+}
+
+export interface EncryptedStoragePayload {
+  version: '2.0.0';
+  encrypted: true;
+  algorithm: 'AES-GCM-256';
+  iterations: number;
+  salt: string; // Base64
+  iv: string; // Base64
+  ciphertext: string; // Base64
 }
 
 export interface ArtistWorkspaceState {

@@ -29,9 +29,18 @@ export interface ImportPreview<T> {
 }
 
 /**
- * Standard RFC-4180 CSV Text Parser
+ * Standard RFC-4180 CSV Text Parser with file-size and formula safety checks
  */
 export function parseCsvText(csvText: string): CsvParseResult {
+  if (typeof csvText !== 'string') {
+    return { headers: [], rows: [], totalRows: 0 };
+  }
+
+  // File size guard (max 5MB)
+  if (csvText.length > 5 * 1024 * 1024) {
+    throw new Error('CSV import exceeds maximum allowable size (5 MB).');
+  }
+
   const lines: string[][] = [];
   let currentRow: string[] = [];
   let currentField = '';
@@ -213,18 +222,27 @@ export function validateArtworkImport(
 
 /**
  * Export data array to standard downloadable CSV string
+ * Sanitizes against CSV formula injection (OWASP CSV Injection defense).
  */
 export function exportToCsv<T extends Record<string, any>>(data: T[], columns: { key: keyof T; label: string }[]): string {
   if (data.length === 0) return '';
+
+  const sanitizeCellValue = (raw: any): string => {
+    if (raw === null || raw === undefined) return '';
+    let str = typeof raw === 'object' ? JSON.stringify(raw) : String(raw);
+    // OWASP CSV Injection: if starts with =, +, -, @, tab, CR, prepend single quote
+    if (/^[=+\-@\t\r]/.test(str)) {
+      str = `'${str}`;
+    }
+    return str.replace(/"/g, '""');
+  };
 
   const headerRow = columns.map((c) => `"${c.label.replace(/"/g, '""')}"`).join(',');
   const rows = data.map((item) => {
     return columns
       .map((col) => {
         const val = item[col.key];
-        if (val === null || val === undefined) return '""';
-        if (typeof val === 'object') return `"${JSON.stringify(val).replace(/"/g, '""')}"`;
-        return `"${String(val).replace(/"/g, '""')}"`;
+        return `"${sanitizeCellValue(val)}"`;
       })
       .join(',');
   });

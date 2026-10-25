@@ -20,6 +20,18 @@ export const BackupSettingsView: React.FC<BackupSettingsViewProps> = ({
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [restoreMessage, setRestoreMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // Encrypted Backup Modal State
+  const [isEncModalOpen, setIsEncModalOpen] = useState(false);
+  const [encPassphrase, setEncPassphrase] = useState('');
+  const [encConfirm, setEncConfirm] = useState('');
+  const [encError, setEncError] = useState('');
+
+  // Encrypted Restore State
+  const [isRestoreEncOpen, setIsRestoreEncOpen] = useState(false);
+  const [restoreEncFileContent, setRestoreEncFileContent] = useState('');
+  const [restoreEncPassphrase, setRestoreEncPassphrase] = useState('');
+  const [restoreEncError, setRestoreEncError] = useState('');
+
   const handleProfileSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onUpdateProfile(profileForm);
@@ -27,10 +39,36 @@ export const BackupSettingsView: React.FC<BackupSettingsViewProps> = ({
     setTimeout(() => setSaveSuccess(false), 2500);
   };
 
-  const handleExportBackup = () => {
+  const handleExportStandardBackup = () => {
     const jsonStr = StorageService.exportBackupJson(state);
     const dateStr = new Date().toISOString().slice(0, 10);
     downloadFile(jsonStr, `morrowkind-backup-${dateStr}.json`, 'application/json');
+  };
+
+  const handleExportEncryptedBackup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEncError('');
+
+    if (encPassphrase.length < 8) {
+      setEncError('Passphrase must be at least 8 characters long for military-grade AES-256 security.');
+      return;
+    }
+    if (encPassphrase !== encConfirm) {
+      setEncError('Passphrases do not match. Please re-enter carefully.');
+      return;
+    }
+
+    try {
+      const encryptedJson = await StorageService.exportEncryptedBackup(state, encPassphrase);
+      const dateStr = new Date().toISOString().slice(0, 10);
+      downloadFile(encryptedJson, `morrowkind-vault-encrypted-${dateStr}.enc.json`, 'application/json');
+      setIsEncModalOpen(false);
+      setEncPassphrase('');
+      setEncConfirm('');
+      setRestoreMessage({ type: 'success', text: 'AES-256-GCM encrypted backup created and downloaded!' });
+    } catch (err: any) {
+      setEncError(err.message || 'Encryption failed.');
+    }
   };
 
   const handleRestoreFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -40,15 +78,52 @@ export const BackupSettingsView: React.FC<BackupSettingsViewProps> = ({
     const reader = new FileReader();
     reader.onload = (event) => {
       const content = event.target?.result as string;
-      const res = StorageService.restoreBackupJson(content);
-      if (res.success && res.restoredState) {
-        onRestoreWorkspace(res.restoredState);
-        setRestoreMessage({ type: 'success', text: 'Backup restored successfully!' });
-      } else {
-        setRestoreMessage({ type: 'error', text: res.error || 'Failed to restore backup file.' });
+      try {
+        const parsed = JSON.parse(content);
+        if (parsed.encryption === 'AES-GCM-256' || parsed.type === 'MORROWKIND_ENCRYPTED_VAULT_BACKUP') {
+          // Open encrypted restore dialog
+          setRestoreEncFileContent(content);
+          setIsRestoreEncOpen(true);
+          return;
+        }
+
+        const res = StorageService.restoreBackupJson(content);
+        if (res.success && res.restoredState) {
+          onRestoreWorkspace(res.restoredState);
+          setRestoreMessage({ type: 'success', text: 'Standard backup restored successfully!' });
+        } else {
+          setRestoreMessage({ type: 'error', text: res.error || 'Failed to restore backup file.' });
+        }
+      } catch (err: any) {
+        setRestoreMessage({ type: 'error', text: `Failed to parse file: ${err.message}` });
       }
     };
     reader.readAsText(file);
+  };
+
+  const handleDecryptAndRestore = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRestoreEncError('');
+
+    if (!restoreEncPassphrase) {
+      setRestoreEncError('Please enter the vault passphrase used when creating this backup.');
+      return;
+    }
+
+    try {
+      const res = await StorageService.restoreEncryptedBackup(restoreEncFileContent, restoreEncPassphrase);
+      if (res.success && res.restoredState) {
+        onRestoreWorkspace(res.restoredState);
+        setIsRestoreEncOpen(false);
+        setRestoreEncPassphrase('');
+        setRestoreEncFileContent('');
+        setRestoreMessage({ type: 'success', text: 'AES-256-GCM encrypted backup decrypted and restored successfully!' });
+      } else {
+        setRestoreEncError(res.error || 'Decryption failed.');
+      }
+    } catch (err: any) {
+      setRestoreEncError(`Decryption failed: ${err.message}`);
+    }
   };
 
   return (
@@ -164,22 +239,32 @@ export const BackupSettingsView: React.FC<BackupSettingsViewProps> = ({
           </form>
         </div>
 
-        {/* Right Column: Backup, Restore & Disaster Recovery */}
+        {/* Right Column: Backup, Restore & Security Posture */}
         <div className="settings-panel">
-          <h3>Disaster Recovery & Backup</h3>
-          <p className="panel-desc">
-            Your workspace data is encrypted and saved in your local browser vault. Download a complete JSON backup
-            regularly to prevent data loss when switching devices or clearing browser cache.
-          </p>
-
-          <div className="backup-action-box">
-            <button type="button" className="btn btn-primary" onClick={handleExportBackup}>
-              💾 Download Full Workspace Backup (JSON)
-            </button>
-            <span className="backup-note">
-              Includes {state.inventory.length} artworks, {state.sales.length} transactions, and {state.collectors.length} collectors.
-            </span>
+          <h3>Storage Architecture & Disaster Recovery</h3>
+          
+          <div className="security-posture-box">
+            <div className="storage-status-strip">
+              <span className="live-dot" aria-hidden="true"></span>
+              <strong>Client-Side Isolated Storage: ACTIVE</strong>
+            </div>
+            <p className="panel-desc">
+              Sensitive studio financial records, collector contacts, and artwork valuations are isolated strictly inside
+              your browser's local sandbox. No private records are stored on public servers or logged in telemetry.
+            </p>
           </div>
+
+          <div className="backup-action-grid">
+            <button type="button" className="btn btn-primary" onClick={handleExportStandardBackup}>
+              💾 Download Backup (JSON)
+            </button>
+            <button type="button" className="btn btn-secondary" onClick={() => setIsEncModalOpen(true)}>
+              🔒 Export AES-256 Encrypted Vault
+            </button>
+          </div>
+          <span className="backup-note">
+            Contains {state.inventory.length} artworks, {state.sales.length} transactions, and {state.collectors.length} collectors.
+          </span>
 
           <div className="panel-divider"></div>
 
@@ -202,17 +287,13 @@ export const BackupSettingsView: React.FC<BackupSettingsViewProps> = ({
 
           <div className="panel-divider"></div>
 
-          <h4>Cloud Bridge Architecture (Supabase / Postgres)</h4>
-          <div className="cloud-bridge-box">
-            <div className="bridge-status">
-              <span className="live-dot" aria-hidden="true"></span>
-              <strong>Client-Side Isolated Vault: ACTIVE</strong>
-            </div>
-            <p className="bridge-text">
-              To enable cross-device multi-user collaboration with PostgreSQL Row Level Security (RLS), configure
-              <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code>. Without these, Morrowkind runs 100%
-              offline and private without sending confidential financial records over the wire.
-            </p>
+          {/* Recovery Boundaries Notice */}
+          <div className="recovery-rules-box">
+            <h4>⚠️ Exact Recovery Boundaries</h4>
+            <ul>
+              <li><strong>What CAN be recovered:</strong> Full JSON backups, AES-256 encrypted backups with correct passphrase, and local storage on reload.</li>
+              <li><strong>What CANNOT be recovered:</strong> If you lose your passphrase for an AES-256-GCM encrypted backup, it is mathematically unrecoverable. Clearing browser cache wipes local data if no external backup file was exported.</li>
+            </ul>
           </div>
 
           <div className="panel-divider"></div>
@@ -240,6 +321,99 @@ export const BackupSettingsView: React.FC<BackupSettingsViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Encrypted Export Modal */}
+      {isEncModalOpen && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="encModalTitle">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3 id="encModalTitle">🔒 Export AES-256-GCM Encrypted Vault</h3>
+              <button type="button" className="modal-close-btn" onClick={() => setIsEncModalOpen(false)}>×</button>
+            </div>
+            <form onSubmit={handleExportEncryptedBackup} className="modal-form">
+              <p className="modal-intro">
+                Your workspace will be encrypted using NIST SP 800-38D AES-GCM (256-bit key derived via PBKDF2 with 100,000 SHA-256 iterations).
+                Without this passphrase, the backup cannot be opened by anyone.
+              </p>
+
+              <div className="form-field">
+                <label htmlFor="encPass">Vault Passphrase (minimum 8 characters) *</label>
+                <input
+                  id="encPass"
+                  type="password"
+                  required
+                  value={encPassphrase}
+                  onChange={(e) => setEncPassphrase(e.target.value)}
+                  placeholder="Enter a strong passphrase"
+                />
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="encConfirm">Confirm Passphrase *</label>
+                <input
+                  id="encConfirm"
+                  type="password"
+                  required
+                  value={encConfirm}
+                  onChange={(e) => setEncConfirm(e.target.value)}
+                  placeholder="Re-enter passphrase"
+                />
+              </div>
+
+              {encError && <div className="error-text">⚠️ {encError}</div>}
+
+              <div className="modal-footer-actions">
+                <button type="button" className="btn btn-secondary" onClick={() => setIsEncModalOpen(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Encrypt & Download Backup
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Encrypted Restore Modal */}
+      {isRestoreEncOpen && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="decModalTitle">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3 id="decModalTitle">🔓 Decrypt & Restore AES-256-GCM Vault</h3>
+              <button type="button" className="modal-close-btn" onClick={() => setIsRestoreEncOpen(false)}>×</button>
+            </div>
+            <form onSubmit={handleDecryptAndRestore} className="modal-form">
+              <p className="modal-intro">
+                This file is encrypted with AES-256-GCM. Enter the secret passphrase used during export to decrypt and restore your studio data.
+              </p>
+
+              <div className="form-field">
+                <label htmlFor="decPass">Vault Passphrase *</label>
+                <input
+                  id="decPass"
+                  type="password"
+                  required
+                  value={restoreEncPassphrase}
+                  onChange={(e) => setRestoreEncPassphrase(e.target.value)}
+                  placeholder="Enter vault passphrase"
+                />
+              </div>
+
+              {restoreEncError && <div className="error-text">⚠️ {restoreEncError}</div>}
+
+              <div className="modal-footer-actions">
+                <button type="button" className="btn btn-secondary" onClick={() => setIsRestoreEncOpen(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Decrypt & Restore
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Audit Log Strip */}
       <div className="audit-log-section">

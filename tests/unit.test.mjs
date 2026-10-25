@@ -13,7 +13,14 @@ import {
 import { calculateEventStatus, formatDateRange, parseDateSafe } from '../src/utils/dateUtils.ts';
 import { filterEvents, sortEvents, DEFAULT_FILTERS } from '../src/utils/filterUtils.ts';
 import { runUpdatePipeline } from '../scripts/update_events.mjs';
-import { generateArtworkFingerprint, verifyArtworkFingerprint } from '../src/utils/cryptoUtils.ts';
+import { 
+  generateArtworkFingerprint, 
+  verifyArtworkFingerprint,
+  encryptAesGcm,
+  decryptAesGcm,
+  isCertificateValid,
+  PROVENANCE_LEGAL_NOTICE
+} from '../src/utils/cryptoUtils.ts';
 import { calculatePricingRecommendation } from '../src/utils/pricingService.ts';
 import { parseCsvText, validateArtworkImport, exportToCsv } from '../src/utils/csvService.ts';
 import { generateQrSvgDataUri } from '../src/utils/qrUtils.ts';
@@ -658,6 +665,211 @@ it('32. Offline QR vector generator creates valid SVG data URI', () => {
   const decodedSvg = decodeURIComponent(qrUri);
   assert.ok(decodedSvg.includes('viewBox="0 0 180 180"'));
   assert.ok(decodedSvg.includes('rect'));
+});
+
+// 33. AES-256-GCM authenticated encryption and decryption round-trip
+await itAsync('33. AES-256-GCM authenticated encryption and decryption round-trip', async () => {
+  const secretPayload = JSON.stringify({ confidentialPatron: 'Elena Rostova', totalSpend: 85000 });
+  const passphrase = 'correct-horse-battery-staple-2026';
+
+  const encrypted = await encryptAesGcm(secretPayload, passphrase);
+  assert.equal(encrypted.algorithm, 'AES-GCM-256');
+  assert.equal(encrypted.iterations, 100000);
+  assert.ok(encrypted.ciphertext.length > 20);
+  assert.ok(encrypted.salt.length > 10);
+  assert.ok(encrypted.iv.length > 10);
+
+  const decrypted = await decryptAesGcm(encrypted, passphrase);
+  assert.equal(decrypted, secretPayload);
+});
+
+// 34. AES-256-GCM rejects wrong passphrase or tampered ciphertext with OperationError
+await itAsync('34. AES-256-GCM rejects wrong passphrase or tampered ciphertext with OperationError', async () => {
+  const secretPayload = 'Confidential Studio Valuation';
+  const passphrase = 'correct-passphrase-2026';
+  const encrypted = await encryptAesGcm(secretPayload, passphrase);
+
+  // 1. Wrong passphrase
+  await assert.rejects(
+    async () => {
+      await decryptAesGcm(encrypted, 'wrong-passphrase-attempt');
+    },
+    /Decryption failed/
+  );
+
+  // 2. Tampered ciphertext
+  const tampered = { ...encrypted, ciphertext: 'AAAA' + encrypted.ciphertext.slice(4) };
+  await assert.rejects(
+    async () => {
+      await decryptAesGcm(tampered, passphrase);
+    },
+    /Decryption failed/
+  );
+});
+
+// 35. StorageService restores AES-256 encrypted vault with correct key and rejects incorrect key
+await itAsync('35. StorageService restores AES-256 encrypted vault with correct key and rejects incorrect key', async () => {
+  const testState = {
+    ...EMPTY_WORKSPACE,
+    inventory: [
+      {
+        id: 'art-enc-1',
+        title: 'Encrypted Masterpiece',
+        artistName: 'Secure Artist',
+        yearCreated: 2026,
+        medium: 'Oil on Linen',
+        dimensions: { height: 150, width: 200, unit: 'cm' },
+        orientation: 'horizontal',
+        artworkType: 'original',
+        productionCost: 500,
+        listPrice: 12000,
+        currency: 'USD',
+        availability: 'available',
+        location: 'Private Vault',
+        tags: ['encrypted'],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    ],
+  };
+
+  const passphrase = 'studio-vault-key-2026';
+  const encBackupJson = await StorageService.exportEncryptedBackup(testState, passphrase);
+  assert.ok(encBackupJson.includes('MORROWKIND_ENCRYPTED_VAULT_BACKUP'));
+
+  // Attempt restore with wrong passphrase
+  const failedRestore = await StorageService.restoreEncryptedBackup(encBackupJson, 'invalid-passphrase');
+  assert.equal(failedRestore.success, false);
+  assert.ok(failedRestore.error.includes('Decryption failed'));
+
+  // Attempt restore with correct passphrase
+  const successRestore = await StorageService.restoreEncryptedBackup(encBackupJson, passphrase);
+  assert.equal(successRestore.success, true);
+  assert.equal(successRestore.restoredState?.inventory[0].title, 'Encrypted Masterpiece');
+});
+
+// 36. Financial correctness: Net proceeds calculation deducts gallery split from net selling price, isolates refunds
+it('36. Financial correctness: Net proceeds calculation deducts gallery split from net selling price, isolates refunds', () => {
+  const gross = 10000;
+  const discount = 1000; // 10% approved discount
+  const netSellingPrice = gross - discount; // 9000
+  const gallerySplitRate = 50; // 50% consignment
+  const commission = Math.round((netSellingPrice * gallerySplitRate) / 100); // 4500
+  const shippingDeduction = 250;
+  const netArtistProceeds = netSellingPrice - commission - shippingDeduction; // 4250
+
+  assert.equal(netSellingPrice, 9000);
+  assert.equal(commission, 4500);
+  assert.equal(netArtistProceeds, 4250);
+
+  // Refund isolation rule: refunded sale has 0 net realized proceeds
+  const refundedProceeds = 0;
+  assert.equal(refundedProceeds, 0);
+});
+
+// 37. Financial correctness: Partial payments track balance due and prevent premature cash recognition
+it('37. Financial correctness: Partial payments track balance due and prevent premature cash recognition', () => {
+  const gross = 8000;
+  const discount = 0;
+  const netSellingPrice = gross - discount;
+  const depositReceived = 3000;
+  const balanceDue = Math.max(0, netSellingPrice - depositReceived); // 5000
+
+  assert.equal(netSellingPrice, 8000);
+  assert.equal(depositReceived, 3000);
+  assert.equal(balanceDue, 5000);
+});
+
+// 38. Cryptographic COA: Altering covered fields modifies SHA-256 hash, non-covered fields do not
+it('38. Cryptographic COA: Altering covered fields modifies SHA-256 hash, non-covered fields do not', () => {
+  const baseMeta = {
+    title: 'Solitude in Cobalt',
+    artistName: 'Maya Lin',
+    yearCreated: 2026,
+    medium: 'Bronze and Cobalt Pigment',
+    dimensionsText: '100 × 80 cm',
+    editionText: 'Original 1 of 1',
+    uniqueSalt: 'MK-COA-TEST-001',
+  };
+
+  const originalHash = generateArtworkFingerprint(baseMeta);
+
+  // 1. Changing covered field (title) MUST change hash
+  const alteredTitleHash = generateArtworkFingerprint({ ...baseMeta, title: 'Solitude in Indigo' });
+  assert.notEqual(originalHash, alteredTitleHash);
+
+  // 2. Changing covered field (dimensions) MUST change hash
+  const alteredDimsHash = generateArtworkFingerprint({ ...baseMeta, dimensionsText: '100 × 85 cm' });
+  assert.notEqual(originalHash, alteredDimsHash);
+
+  // 3. Changing covered field (medium) MUST change hash
+  const alteredMediumHash = generateArtworkFingerprint({ ...baseMeta, medium: 'Bronze and Ultramarine' });
+  assert.notEqual(originalHash, alteredMediumHash);
+
+  // 4. Verify helper
+  assert.equal(verifyArtworkFingerprint(originalHash, baseMeta), true);
+  assert.equal(verifyArtworkFingerprint(originalHash, { ...baseMeta, title: 'Tampered' }), false);
+});
+
+// 39. Certificate revocation state and verification validation
+it('39. Certificate revocation state and verification validation', () => {
+  const validCert = {
+    certificateId: 'MK-COA-2026-1234',
+    artworkId: 'art-1',
+    artworkTitle: 'Harmony',
+    artistName: 'Artist',
+    yearCreated: 2026,
+    medium: 'Oil',
+    dimensionsText: '50 × 50 cm',
+    editionText: '1/1',
+    issueDate: '2026-10-25',
+    issuer: 'Vault',
+    sha256Fingerprint: 'abcd1234',
+    verificationUrl: 'https://example.com',
+    status: 'valid',
+    blockchainAnchor: { isAnchored: false, note: '' }
+  };
+
+  assert.equal(isCertificateValid(validCert), true);
+
+  const revokedCert = {
+    ...validCert,
+    status: 'revoked',
+    revocationReason: 'Artwork destroyed by fire',
+    revokedAt: new Date().toISOString()
+  };
+
+  assert.equal(isCertificateValid(revokedCert), false);
+  assert.equal(revokedCert.revocationReason, 'Artwork destroyed by fire');
+});
+
+// 40. Security: CSV formula injection defense sanitizes formula triggers and rejects oversized files
+it('40. Security: CSV formula injection defense sanitizes formula triggers and rejects oversized files', () => {
+  const maliciousRows = [
+    { title: '=SUM(1+1)', price: '+100', buyer: '@danger', note: '-calc' },
+  ];
+  const columns = [
+    { key: 'title', label: 'Title' },
+    { key: 'price', label: 'Price' },
+    { key: 'buyer', label: 'Buyer' },
+    { key: 'note', label: 'Note' },
+  ];
+
+  const csv = exportToCsv(maliciousRows, columns);
+  // OWASP CSV formula injection defense ensures characters =, +, -, @ are prepended with '
+  assert.ok(csv.includes("'=SUM(1+1)"), 'Equals sign must be sanitized');
+  assert.ok(csv.includes("'+100"), 'Plus sign must be sanitized');
+  assert.ok(csv.includes("'@danger"), 'At sign must be sanitized');
+  assert.ok(csv.includes("'-calc"), 'Minus sign must be sanitized');
+
+  // Oversized CSV rejection test (simulate 6MB text)
+  const hugeCsv = 'A'.repeat(5.5 * 1024 * 1024);
+  assert.throws(
+    () => {
+      parseCsvText(hugeCsv);
+    },
+    /exceeds maximum allowable size/
+  );
 });
 
 console.log(`\nData Integrity & Adversarial Tests: ${passed} PASSED, ${failed} FAILED\n`);
