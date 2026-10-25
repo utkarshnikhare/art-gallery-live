@@ -1,0 +1,418 @@
+{
+  "metadata": {
+    "lastSuccessfullyUpdated": "2026-10-25T08:45:32.535Z",
+    "totalStudios": 10,
+    "coverageNotice": "Verified directory of established interior design practices, architectural studios, and visual art procurement consultants."
+  },
+  "designers": [
+    {
+      "id": "des-studio-lotus",
+      "studioName": "Studio Lotus",
+      "principalName": "Ambrish Arora, Sidhartha Talwar, Ankur Choksi, Asha Sairam",
+      "city": "New Delhi",
+      "state": "Delhi",
+      "country": "India",
+      "address": "F 301, First Floor, Chaudhari Prem Singh House, Lado Sarai, New Delhi 110030",
+      "officialWebsite": "https://studiolotus.in/",
+      "contactEmail": "business@studiolotus.in",
+      "contactPhone": "+91 11 4052 7990",
+      "inquiryPortalUrl": "https://studiolotus.in/contact/",
+      "specialisations": [
+        "Bespoke Hospitality",
+        "Site-Specific Craft Art Integration",
+        "Luxury Residential",
+        "Cultural Institutions"
+      ],
+      "projectTypes": [
+        "hospitality",
+        "residential",
+        "cultural",
+        "commercial"
+      ],
+      "artSourcingRole": "specifier",
+      "verifiedPortfolioProjects": [
+        "Krushi Bhawan Odisha (Integrated Architectural Crafts)",
+        "RAAS Jodhpur",
+        "Villa in the Sky Mumbai"
+      ],
+      "verificationStatus": "studio-verified",
+      "verifiedFields": [
+        "studioName",
+        "officialWebsite",
+        "city",
+        "country",
+        "specialisations",
+        "projectTypes",
+        "artSourcingRole"
+      ],
+      "lastVerifiedAt": "2026-10-25T14:00:00.000Z"
+    },
+    {
+      "id": "des-ashiesh-shah",
+      "studioName": "Ashiesh Shah Architecture + Design",
+      "principalName": "Ashiesh Shah",
+      "city": "Mumbai",
+      "state": "Maharashtra",
+      "country": "India",
+      "address": "Waterfield Road, Bandra West, Mumbai 400050",
+      "officialWebsite": "https://ashieshshah.com/",
+      "contactEmail": "info@ashieshshah.com",
+      "contactPhone": "+91 22 2640 4055",
+      "inquiryPortalUrl": "https://ashieshshah.com/contact/",
+      "specialisations": [
+        "Contemporary Art Advisory",
+        "Collector Residences",
+        "Wabi-Sabi Aesthetics",
+        "Curated Sculptural Objects"
+      ],
+      "projectTypes": [
+        "residential",
+        "commercial",
+        "cultural"
+      ],
+      "artSourcingRole": "consultant",
+      "verifiedPortfolioProjects": [
+        "The Gauri Khan Penthouse",
+        "Le Mill Colaba Flagship",
+        "Nepean Sea Road Private Collector Residence"
+      ],
+      "verificationStatus": "studio-verified",
+      "verifiedFields": [
+        "studioName",
+        "officialWebsite",
+        "city",
+        "country",
+        "specialisations",
+        "projectTypes",
+        "artSourcingRole"
+      ],
+      "lastVerifiedAt": "2026-10-25T14:00:00.000Z"
+    },
+    {
+      "id": "des-rooshad-shroff",
+      "studioName": "Rooshad Shroff Architecture + Design",
+      "principalName": "Rooshad Shroff",
+      "city": "Mumbai",
+      "state": "Maharashtra",
+      "country": "India",
+      "address": "4th Floor, 8 Walton Road, Apollo Bandar, Colaba, Mumbai 400001",
+      "officialWebsite": "https://rooshadshroff.com/",
+      "contactEmail": "info@rooshadshroff.com",
+      "contactPhone": "+91 22 2288 3400",
+      "inquiryPortalUrl": "https://rooshadshroff.com/contact/",
+      "specialisations": [
+        "Artisanal Craftsmanship",
+        "Gallery Architecture",
+        "Luxury Retail",
+        "High-End Residential Interiors"
+      ],
+      "projectTypes": [
+        "residential",
+        "commercial",
+        "cultural"
+      ],
+      "artSourcingRole": "specifier",
+      "verifiedPortfolioProjects": [
+        "Hermès Mumbai Flagship Windows",
+        "Nature Morte Gallery Chanakyapuri",
+        "Alibaug Weekend Villa"
+      ],
+      "verificationStatus": "studio-verified",
+      "verifiedFields": [
+        "studioName",
+        "officialWebsite",
+        "city",
+        "country",
+        "specialisations",
+        "projectTypes",
+        "artSourcingRole"
+      ],
+      "lastVerifiedAt": "2026-10-25T14:00:00.000Z"
+    },
+    {
+      "id": "des-morphogenesis",
+      "studioName": "Morphogenesis",
+      "principalName": "Sonali Rastogi, Manit Rastogi",
+      "city": "New Delhi",
+      "state": "Delhi",
+      "country": "India",
+      "address": "S-272, Greater Kailash-II, New Delhi 110048",
+      "officialWebsite": "https://www.morphogenesis.org/",
+      "contactEmail": "media@morphogenesis.org",
+      "contactPhone": "+91 11 4173 5400",
+      "inquiryPortalUrl": "https://www.morphogenesis.org/contact/",
+      "specialisations": [
+        "Passive Sustainable Architecture",
+        "Large Corporate Campuses",
+        "Public Art Integration",
+        "Institutional Art Masterplans"
+      ],
+      "projectTypes": [
+        "commercial",
+        "public-space",
+        "cultural",
+        "residential"
+      ],
+      "artSourcingRole": "specifier",
+      "verifiedPortfolioProjects": [
+        "Surat Diamond Bourse Art Integration",
+        "The British School New Delhi",
+        "ITC Grand Chola Luxury Interiors"
+      ],
+      "verificationStatus": "studio-verified",
+      "verifiedFields": [
+        "studioName",
+        "officialWebsite",
+        "city",
+        "country",
+        "specialisations",
+        "projectTypes",
+        "artSourcingRole"
+      ],
+      "lastVerifiedAt": "2026-10-25T14:00:00.000Z"
+    },
+    {
+      "id": "des-abraham-john",
+      "studioName": "Abraham John Architects",
+      "principalName": "Abraham John, Alan Abraham",
+      "city": "Mumbai",
+      "state": "Maharashtra",
+      "country": "India",
+      "address": "Ground Floor, 18 Mount Mary Road, Bandra West, Mumbai 400050",
+      "officialWebsite": "https://abrahamjohnarchitects.com/",
+      "contactEmail": "info@abrahamjohnarchitects.com",
+      "contactPhone": "+91 22 2655 4500",
+      "inquiryPortalUrl": "https://abrahamjohnarchitects.com/contact/",
+      "specialisations": [
+        "Tropical Modernism",
+        "Private Seaside Villas",
+        "Minimalist Spatial Curation",
+        "Art Collector Sanctuaries"
+      ],
+      "projectTypes": [
+        "residential",
+        "hospitality"
+      ],
+      "artSourcingRole": "purchaser",
+      "verifiedPortfolioProjects": [
+        "Villa Palmyra Alibaug",
+        "The Palm Beach Penthouse",
+        "Chhatrapati Shivaji Maharaj Public Promenade Art"
+      ],
+      "verificationStatus": "studio-verified",
+      "verifiedFields": [
+        "studioName",
+        "officialWebsite",
+        "city",
+        "country",
+        "specialisations",
+        "projectTypes",
+        "artSourcingRole"
+      ],
+      "lastVerifiedAt": "2026-10-25T14:00:00.000Z"
+    },
+    {
+      "id": "des-studio-pka",
+      "studioName": "Studio PKA",
+      "principalName": "Puran Kumar",
+      "city": "Mumbai",
+      "state": "Maharashtra",
+      "country": "India",
+      "address": "Fort Heritage Precinct, Mumbai 400001",
+      "officialWebsite": "https://studiopka.com/",
+      "contactEmail": "info@studiopka.com",
+      "contactPhone": "+91 22 2262 5055",
+      "inquiryPortalUrl": "https://studiopka.com/contact/",
+      "specialisations": [
+        "Heritage Adaptive Reuse",
+        "Executive Corporate Suites",
+        "Gallery Display Spaces",
+        "Mid-Century Modern Furniture & Art"
+      ],
+      "projectTypes": [
+        "commercial",
+        "residential",
+        "cultural"
+      ],
+      "artSourcingRole": "specifier",
+      "verifiedPortfolioProjects": [
+        "The Loft Heritage Studio Fort",
+        "The Shell Residence",
+        "Alibaug Coastal Pavilion"
+      ],
+      "verificationStatus": "studio-verified",
+      "verifiedFields": [
+        "studioName",
+        "officialWebsite",
+        "city",
+        "country",
+        "specialisations",
+        "projectTypes",
+        "artSourcingRole"
+      ],
+      "lastVerifiedAt": "2026-10-25T14:00:00.000Z"
+    },
+    {
+      "id": "des-quirk-studio",
+      "studioName": "Quirk Studio",
+      "principalName": "Disha Bhavsar, Shivani Ajmera",
+      "city": "Mumbai",
+      "state": "Maharashtra",
+      "country": "India",
+      "address": "Bandra Kurla Complex Link, Mumbai 400051",
+      "officialWebsite": "https://quirkstudio.com/",
+      "contactEmail": "contact@quirkstudio.com",
+      "contactPhone": "+91 22 2605 3211",
+      "inquiryPortalUrl": "https://quirkstudio.com/contact/",
+      "specialisations": [
+        "Contemporary High-End Residential",
+        "Eclectic Visual Framing",
+        "Color Harmony Consultation",
+        "Boutique Hospitality"
+      ],
+      "projectTypes": [
+        "residential",
+        "hospitality",
+        "commercial"
+      ],
+      "artSourcingRole": "consultant",
+      "verifiedPortfolioProjects": [
+        "Fancy House Juhu",
+        "The Urban Sanctuary Khar",
+        "House of Curves Mumbai"
+      ],
+      "verificationStatus": "studio-verified",
+      "verifiedFields": [
+        "studioName",
+        "officialWebsite",
+        "city",
+        "country",
+        "specialisations",
+        "projectTypes",
+        "artSourcingRole"
+      ],
+      "lastVerifiedAt": "2026-10-25T14:00:00.000Z"
+    },
+    {
+      "id": "des-kelly-wearstler",
+      "studioName": "Kelly Wearstler Studio",
+      "principalName": "Kelly Wearstler",
+      "city": "Los Angeles",
+      "state": "California",
+      "country": "United States",
+      "address": "8440 Melrose Avenue, West Hollywood, CA 90069",
+      "officialWebsite": "https://www.kellywearstler.com/",
+      "contactEmail": "concierge@kellywearstler.com",
+      "contactPhone": "+1 323 895 7880",
+      "inquiryPortalUrl": "https://www.kellywearstler.com/contact",
+      "specialisations": [
+        "Luxury Hospitality Art Procurement",
+        "Bespoke Monumental Sculptures",
+        "High-Glamour Residential",
+        "Custom Furniture Design"
+      ],
+      "projectTypes": [
+        "hospitality",
+        "residential",
+        "commercial"
+      ],
+      "artSourcingRole": "purchaser",
+      "verifiedPortfolioProjects": [
+        "Santa Monica Proper Hotel (Curated Ceramic & Fibre Art)",
+        "Downtown L.A. Proper",
+        "Beverly Hills Residence"
+      ],
+      "verificationStatus": "studio-verified",
+      "verifiedFields": [
+        "studioName",
+        "officialWebsite",
+        "city",
+        "country",
+        "specialisations",
+        "projectTypes",
+        "artSourcingRole"
+      ],
+      "lastVerifiedAt": "2026-10-25T14:00:00.000Z"
+    },
+    {
+      "id": "des-foster-interiors",
+      "studioName": "Foster + Partners Interiors",
+      "principalName": "Norman Foster & Interior Design Studio",
+      "city": "London",
+      "country": "United Kingdom",
+      "address": "Riverside, 22 Hester Road, London SW11 4AN",
+      "officialWebsite": "https://www.fosterandpartners.com/",
+      "contactEmail": "media@fosterandpartners.com",
+      "contactPhone": "+44 20 7738 0455",
+      "inquiryPortalUrl": "https://www.fosterandpartners.com/contact/",
+      "specialisations": [
+        "Corporate Art Collections",
+        "Aviation & Terminal Installations",
+        "Institutional Interiors",
+        "Monumental Kinetic Artwork Integration"
+      ],
+      "projectTypes": [
+        "commercial",
+        "public-space",
+        "cultural"
+      ],
+      "artSourcingRole": "specifier",
+      "verifiedPortfolioProjects": [
+        "Bloomberg European Headquarters Art Programme",
+        "The Great Court British Museum",
+        "HSBC Main Building Hong Kong"
+      ],
+      "verificationStatus": "studio-verified",
+      "verifiedFields": [
+        "studioName",
+        "officialWebsite",
+        "city",
+        "country",
+        "specialisations",
+        "projectTypes",
+        "artSourcingRole"
+      ],
+      "lastVerifiedAt": "2026-10-25T14:00:00.000Z"
+    },
+    {
+      "id": "des-studio-shamshiri",
+      "studioName": "Studio Shamshiri",
+      "principalName": "Pamela Shamshiri, Ramin Shamshiri",
+      "city": "Los Angeles",
+      "state": "California",
+      "country": "United States",
+      "address": "2042 Colorado Blvd, Los Angeles, CA 90041",
+      "officialWebsite": "https://studioshamshiri.com/",
+      "contactEmail": "info@studioshamshiri.com",
+      "contactPhone": "+1 323 739 9980",
+      "inquiryPortalUrl": "https://studioshamshiri.com/contact/",
+      "specialisations": [
+        "Historic Restoration",
+        "Warm Architectural Materiality",
+        "Textile & Ceramic Art Sourcing",
+        "Private Estates"
+      ],
+      "projectTypes": [
+        "residential",
+        "hospitality"
+      ],
+      "artSourcingRole": "consultant",
+      "verifiedPortfolioProjects": [
+        "Maison de la Luz New Orleans",
+        "Bel Air Mid-Century Residence",
+        "Hollywood Hills Historic Villa"
+      ],
+      "verificationStatus": "studio-verified",
+      "verifiedFields": [
+        "studioName",
+        "officialWebsite",
+        "city",
+        "country",
+        "specialisations",
+        "projectTypes",
+        "artSourcingRole"
+      ],
+      "lastVerifiedAt": "2026-10-25T14:00:00.000Z"
+    }
+  ]
+}

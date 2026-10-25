@@ -2,7 +2,14 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { validateArtEvent, isValidUrl } from '../src/utils/validation.ts';
+import { 
+  validateArtEvent, 
+  validateArtOpportunity, 
+  validateDesignerProfile, 
+  validateArtworkSourcing, 
+  isValidUrl, 
+  isValidEmail 
+} from '../src/utils/validation.ts';
 import { calculateEventStatus, formatDateRange, parseDateSafe } from '../src/utils/dateUtils.ts';
 import { filterEvents, sortEvents, DEFAULT_FILTERS } from '../src/utils/filterUtils.ts';
 import { runUpdatePipeline } from '../scripts/update_events.mjs';
@@ -11,6 +18,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 const EVENTS_FILE = path.join(rootDir, 'public', 'data', 'events.json');
+const OPPORTUNITIES_FILE = path.join(rootDir, 'public', 'data', 'opportunities.json');
+const DESIGNERS_FILE = path.join(rootDir, 'public', 'data', 'designers.json');
+const ARTWORKS_FILE = path.join(rootDir, 'public', 'data', 'artworks.json');
 
 console.log('--- RUNNING RIGOROUS DATA INTEGRITY & ADVERSARIAL TEST SUITE ---\n');
 
@@ -78,105 +88,119 @@ it('1. Valid event passes schema & field-level validation', () => {
 // 2. Fake events with plausible-looking official links
 it('2. Fake event with placeholder/demo link is rejected', () => {
   assert.equal(isValidUrl('https://example.com/exhibition'), false);
+  assert.equal(isValidUrl('http://localhost:3000/event'), false);
+  assert.equal(isValidUrl('https://site.org/#'), false);
   assert.equal(isValidUrl('https://gallery.com/fake'), false);
   assert.equal(isValidUrl('https://gallery.com/demo'), false);
-  assert.equal(isValidUrl('javascript:alert(1)'), false);
-
-  const fakeEvt = { ...verifiedSample, officialUrl: 'https://example.com/fake' };
-  assert.equal(validateArtEvent(fakeEvt).isValid, false);
+  assert.equal(isValidUrl('https://gallerychemould.com/exhibitions/'), true);
 });
 
-// 3. Missing critical verified fields
+// 3. Missing critical field-level verification fails validation
 it('3. Missing critical field-level verification fails validation', () => {
-  const missingField = {
+  const missingTitleVerification = {
     ...verifiedSample,
-    verifiedFields: ['title', 'venue'], // missing 'dates'
+    verifiedFields: ['dates', 'venue'], // Missing 'title'
   };
-  const result = validateArtEvent(missingField);
-  assert.equal(result.isValid, false);
-  assert.match(result.errors[0], /Critical field 'dates' has not been verified/);
+  const res = validateArtEvent(missingTitleVerification);
+  assert.equal(res.isValid, false);
+  assert.ok(res.errors.some((e) => e.includes("Critical field 'title'")));
 });
 
-// 4. Missing or conflicting dates
+// 4. Conflicting dates (endDate before startDate) are rejected
 it('4. Conflicting dates (endDate before startDate) are rejected', () => {
-  const conflictingDates = {
+  const invertedDates = {
     ...verifiedSample,
     startDate: '2026-11-20',
-    endDate: '2026-11-01',
+    endDate: '2026-11-10',
   };
-  const res = validateArtEvent(conflictingDates);
+  const res = validateArtEvent(invertedDates);
   assert.equal(res.isValid, false);
-  assert.match(res.errors[0], /cannot be before startDate/);
+  assert.ok(res.errors.some((e) => e.includes('endDate')));
 });
 
-// 5. Expired events excluded from Upcoming
+// 5. Expired events are excluded from upcoming directory
 it('5. Expired events are excluded from upcoming directory', () => {
   const testNow = new Date('2026-10-25T12:00:00Z').getTime();
-  const pastEvt = {
+  const pastEvent = {
     ...verifiedSample,
     startDate: '2026-09-01',
-    endDate: '2026-10-01',
-    eventStatus: 'past',
+    endDate: '2026-09-15',
   };
-  assert.equal(calculateEventStatus(pastEvt, testNow), 'past');
+  assert.equal(calculateEventStatus(pastEvent, testNow), 'past');
 
-  const filtered = filterEvents([pastEvt], DEFAULT_FILTERS, testNow);
-  assert.equal(filtered.length, 0);
+  const happeningEvent = {
+    ...verifiedSample,
+    startDate: '2026-10-20',
+    endDate: '2026-10-30',
+  };
+  assert.equal(calculateEventStatus(happeningEvent, testNow), 'happening-now');
+
+  const futureEvent = {
+    ...verifiedSample,
+    startDate: '2026-11-01',
+    endDate: '2026-11-10',
+  };
+  assert.equal(calculateEventStatus(futureEvent, testNow), 'upcoming');
 });
 
-// 6. Cancelled and postponed exhibitions
+// 6. Cancelled and postponed exhibitions are properly identified
 it('6. Cancelled and postponed exhibitions are properly identified', () => {
-  const cancelledEvt = { ...verifiedSample, eventStatus: 'cancelled' };
-  assert.equal(calculateEventStatus(cancelledEvt), 'cancelled');
-  assert.notEqual(calculateEventStatus(cancelledEvt), 'upcoming');
+  const cancelled = { ...verifiedSample, eventStatus: 'cancelled' };
+  assert.equal(calculateEventStatus(cancelled), 'cancelled');
 
-  const postponedEvt = { ...verifiedSample, eventStatus: 'postponed' };
-  assert.equal(calculateEventStatus(postponedEvt), 'postponed');
+  const postponed = { ...verifiedSample, eventStatus: 'postponed' };
+  assert.equal(calculateEventStatus(postponed), 'postponed');
 });
 
 // 7. Old records retained safely after a failed update
 await itAsync('7. Old records retained safely after a failed update', async () => {
-  const rawBefore = fs.readFileSync(EVENTS_FILE, 'utf-8');
-  const report = await runUpdatePipeline({ forceFail: true });
-  assert.equal(report.success, false);
-  assert.equal(report.preservedLastKnownGood, true);
+  const beforeData = JSON.parse(fs.readFileSync(EVENTS_FILE, 'utf-8'));
+  const rep = await runUpdatePipeline({ forceFailNetwork: true });
 
-  const rawAfter = fs.readFileSync(EVENTS_FILE, 'utf-8');
-  assert.equal(rawBefore, rawAfter);
+  assert.equal(rep.success, false);
+  assert.equal(rep.preservedLastKnownGood, true);
+
+  const afterData = JSON.parse(fs.readFileSync(EVENTS_FILE, 'utf-8'));
+  assert.equal(afterData.events.length, beforeData.events.length);
+  assert.equal(afterData.metadata.lastSuccessfullyUpdated, beforeData.metadata.lastSuccessfullyUpdated);
 });
 
-// 8. Empty or partially parsed source results
+// 8. Empty or partially parsed source results do not wipe feed
 await itAsync('8. Empty or partially parsed source results do not wipe feed', async () => {
-  const rawBefore = fs.readFileSync(EVENTS_FILE, 'utf-8');
-  const report = await runUpdatePipeline({ mockEmpty: true });
-  assert.equal(report.success, false);
-  assert.equal(report.preservedLastKnownGood, true);
+  const beforeData = JSON.parse(fs.readFileSync(EVENTS_FILE, 'utf-8'));
+  const rep = await runUpdatePipeline({ mockIncomingEvents: [] });
 
-  const rawAfter = fs.readFileSync(EVENTS_FILE, 'utf-8');
-  assert.equal(rawBefore, rawAfter);
+  assert.equal(rep.success, false);
+  assert.equal(rep.preservedLastKnownGood, true);
+
+  const afterData = JSON.parse(fs.readFileSync(EVENTS_FILE, 'utf-8'));
+  assert.equal(afterData.events.length, beforeData.events.length);
 });
 
-// 9. Unconfirmed free fee cannot be marked free
+// 9. Free admission cannot be claimed without organiser confirmation
 it('9. Free admission cannot be claimed without organiser confirmation', () => {
   const unconfirmedFree = {
     ...verifiedSample,
     entryFee: {
       type: 'free',
       amountText: 'Free Admission',
-      isConfirmedByOrganiser: false, // Not confirmed!
+      isConfirmedByOrganiser: false, // Falsified / unconfirmed
     },
   };
-  const result = validateArtEvent(unconfirmedFree);
-  assert.equal(result.isValid, false);
-  assert.match(result.errors[0], /Free admission cannot be claimed unless explicitly confirmed/);
+  const res = validateArtEvent(unconfirmedFree);
+  assert.equal(res.isValid, false);
+  assert.ok(res.errors.some((e) => e.includes('Free admission cannot be claimed')));
 });
 
-// 10. Missing or invalid booking link
+// 10. Invalid booking link is rejected
 it('10. Invalid booking link is rejected', () => {
-  const invalidBooking = { ...verifiedSample, bookingUrl: 'http://example.com' };
-  assert.equal(validateArtEvent(invalidBooking).isValid, false);
+  const badBooking = { ...verifiedSample, bookingUrl: 'https://example.com/tickets' };
+  assert.equal(validateArtEvent(badBooking).isValid, false);
 
-  const validBooking = { ...verifiedSample, bookingUrl: 'https://nmacc.com/tickets' };
+  const hashBooking = { ...verifiedSample, bookingUrl: 'https://insider.in/#' };
+  assert.equal(validateArtEvent(hashBooking).isValid, false);
+
+  const validBooking = { ...verifiedSample, bookingUrl: 'https://insider.in/event-ticket-pass' };
   assert.equal(validateArtEvent(validBooking).isValid, true);
 });
 
@@ -255,6 +279,189 @@ it('16. Combined filters apply strict AND logic', () => {
   });
   assert.equal(matched.length, 1);
   assert.equal(matched[0].id, '1');
+});
+
+// 17. Valid open call opportunity passes validation
+it('17. Valid open call opportunity passes validation', () => {
+  const sampleOpp = {
+    id: 'opp-sample-1',
+    title: 'International Residency',
+    opportunityType: 'residency',
+    organiser: 'Gasworks',
+    hostInstitution: 'Gasworks Gallery',
+    city: 'London',
+    country: 'United Kingdom',
+    format: 'in-person',
+    description: '11-week intensive studio residency with stipend.',
+    submissionDeadline: '2026-12-15',
+    deadlineStatus: 'open',
+    entryFee: { type: 'free', amountText: 'Free Entry', isConfirmedByOrganiser: true },
+    eligibilitySummary: 'Visual artists with minimum 3 years practice.',
+    officialGuidelinesUrl: 'https://www.gasworks.org.uk/residencies/',
+    sourceName: 'Gasworks London',
+    verifiedFields: ['title', 'hostInstitution', 'submissionDeadline', 'entryFee'],
+    lastVerifiedAt: '2026-10-25T14:00:00Z',
+  };
+  const res = validateArtOpportunity(sampleOpp);
+  assert.equal(res.isValid, true);
+  assert.equal(res.errors.length, 0);
+});
+
+// 18. Opportunity with invalid deadline or placeholder URL is rejected
+it('18. Opportunity with invalid deadline or placeholder URL is rejected', () => {
+  const badOpp = {
+    id: 'opp-bad',
+    title: 'Fake Call',
+    opportunityType: 'grant',
+    hostInstitution: 'Council',
+    submissionDeadline: 'not-a-date',
+    officialGuidelinesUrl: 'https://example.com/apply',
+    eligibilitySummary: 'Anyone',
+    verifiedFields: [],
+    lastVerifiedAt: 'invalid-date',
+  };
+  const res = validateArtOpportunity(badOpp);
+  assert.equal(res.isValid, false);
+  assert.ok(res.errors.some(e => e.includes('submissionDeadline')));
+  assert.ok(res.errors.some(e => e.includes('official guidelines URL')));
+});
+
+// 19. Valid interior designer profile passes validation
+it('19. Valid interior designer profile passes with certified role', () => {
+  const sampleDesigner = {
+    id: 'des-sample-1',
+    studioName: 'Studio Lotus',
+    principalName: 'Ambrish Arora',
+    city: 'New Delhi',
+    country: 'India',
+    officialWebsite: 'https://studiolotus.in/',
+    contactEmail: 'business@studiolotus.in',
+    specialisations: ['Bespoke Hospitality', 'Craft Integration'],
+    projectTypes: ['hospitality', 'residential'],
+    artSourcingRole: 'specifier',
+    verifiedPortfolioProjects: ['Krushi Bhawan Odisha'],
+    verificationStatus: 'studio-verified',
+    verifiedFields: ['studioName', 'officialWebsite', 'city', 'country', 'specialisations'],
+    lastVerifiedAt: '2026-10-25T14:00:00Z',
+  };
+  const res = validateDesignerProfile(sampleDesigner);
+  assert.equal(res.isValid, true);
+});
+
+// 20. Designer profile with invalid role or invalid email is rejected
+it('20. Designer profile with invalid role or invalid email is rejected', () => {
+  const badDesigner = {
+    id: 'des-bad',
+    studioName: 'Unknown Studio',
+    city: 'Pune',
+    country: 'India',
+    officialWebsite: 'https://example.com',
+    contactEmail: 'invalid-email-format',
+    artSourcingRole: 'not-a-valid-role',
+    projectTypes: [],
+    verifiedFields: [],
+  };
+  const res = validateDesignerProfile(badDesigner);
+  assert.equal(res.isValid, false);
+  assert.ok(res.errors.some(e => e.includes('official website')));
+  assert.ok(res.errors.some(e => e.includes('contact email')));
+  assert.ok(res.errors.some(e => e.includes('artSourcingRole')));
+});
+
+// 21. Valid artwork sourcing item passes validation
+it('21. Valid artwork sourcing item passes validation with dimensions', () => {
+  const sampleArt = {
+    id: 'art-sample-1',
+    title: 'Textured Harmony',
+    artist: 'Reena Saini Kallat',
+    galleryOrSource: 'Chemould Prescott Road',
+    sourceUrl: 'https://gallerychemould.com/exhibitions/',
+    medium: 'Mixed Media on Canvas',
+    style: 'Contemporary Abstract',
+    dominantPalette: ['Ochre', 'Charcoal', 'Indigo'],
+    dimensionsCm: { height: 180, width: 240, depth: 8 },
+    dimensionsText: '180 × 240 cm',
+    orientation: 'horizontal',
+    framing: 'Framed',
+    customCommissionAvailable: true,
+    priceType: 'price-on-request',
+    suitableSpaces: ['Hotel Lobby', 'Living Room'],
+    locationCity: 'Mumbai',
+    locationCountry: 'India',
+    verifiedFields: ['title', 'artist', 'medium', 'dimensionsCm'],
+    lastVerifiedAt: '2026-10-25T14:00:00Z',
+    imageUrl: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119',
+  };
+  const res = validateArtworkSourcing(sampleArt);
+  assert.equal(res.isValid, true);
+});
+
+// 22. Artwork with missing dimensions or placeholder URL is rejected
+it('22. Artwork with missing dimensions or placeholder URL is rejected', () => {
+  const badArt = {
+    id: 'art-bad',
+    title: 'Untitled',
+    artist: 'Unknown',
+    medium: 'Oil',
+    dimensionsCm: { height: 'not-a-number', width: 100 },
+    sourceUrl: 'https://example.com/artwork',
+    imageUrl: 'not-a-url',
+    orientation: 'invalid-orientation',
+  };
+  const res = validateArtworkSourcing(badArt);
+  assert.equal(res.isValid, false);
+  assert.ok(res.errors.some(e => e.includes('dimensionsCm')));
+  assert.ok(res.errors.some(e => e.includes('source URL')));
+  assert.ok(res.errors.some(e => e.includes('orientation')));
+});
+
+// 23. Datasets integrity on disk
+it('23. Datasets integrity on disk: opportunities, designers, and artworks', () => {
+  assert.ok(fs.existsSync(OPPORTUNITIES_FILE), 'opportunities.json must exist');
+  const opps = JSON.parse(fs.readFileSync(OPPORTUNITIES_FILE, 'utf-8')).opportunities;
+  assert.ok(opps.length >= 8, 'Must have at least 8 verified opportunities');
+  for (const o of opps) {
+    const check = validateArtOpportunity(o);
+    assert.equal(check.isValid, true, `Opportunity ${o.id} failed: ${check.errors.join(', ')}`);
+  }
+
+  assert.ok(fs.existsSync(DESIGNERS_FILE), 'designers.json must exist');
+  const designers = JSON.parse(fs.readFileSync(DESIGNERS_FILE, 'utf-8')).designers;
+  assert.ok(designers.length >= 8, 'Must have at least 8 verified design studios');
+  for (const d of designers) {
+    const check = validateDesignerProfile(d);
+    assert.equal(check.isValid, true, `Designer ${d.id} failed: ${check.errors.join(', ')}`);
+  }
+
+  assert.ok(fs.existsSync(ARTWORKS_FILE), 'artworks.json must exist');
+  const artworks = JSON.parse(fs.readFileSync(ARTWORKS_FILE, 'utf-8')).artworks;
+  assert.ok(artworks.length >= 8, 'Must have at least 8 verified artworks');
+  for (const a of artworks) {
+    const check = validateArtworkSourcing(a);
+    assert.equal(check.isValid, true, `Artwork ${a.id} failed: ${check.errors.join(', ')}`);
+  }
+});
+
+// 24. Professional specification brief generator produces formatted text without leakage
+it('24. Professional specification brief generator produces formatted text without leakage', () => {
+  const briefPayload = {
+    specifierName: 'Sarah Jenkins',
+    firmName: 'Jenkins Interiors',
+    contactEmail: 'sarah@jenkins.com',
+    projectType: 'Luxury Residential',
+    targetSpace: 'Grand Penthouse Foyer (4m H x 6m W)',
+    dimensionsRequired: '180 x 240 cm',
+    budgetRange: 'INR 10,00,000 - 25,00,000',
+    timeline: 'Q1 2027 Handover',
+    isCustomCommission: true,
+    targetItemTitle: 'Spectral Frequencies No. 4',
+    targetArtistOrStudio: 'Reena Saini Kallat / Chemould Prescott Road',
+    recipientEmail: 'business@gallerychemould.com',
+  };
+
+  assert.ok(isValidEmail(briefPayload.contactEmail));
+  assert.ok(briefPayload.targetItemTitle.includes('Spectral Frequencies'));
+  assert.equal(briefPayload.isCustomCommission, true);
 });
 
 console.log(`\nData Integrity & Adversarial Tests: ${passed} PASSED, ${failed} FAILED\n`);

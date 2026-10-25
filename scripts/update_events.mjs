@@ -10,6 +10,9 @@ const SOURCES_FILE = path.join(rootDir, 'scripts', 'sources.json');
 const EVENTS_FILE = path.join(rootDir, 'public', 'data', 'events.json');
 const EVENTS_TMP_FILE = path.join(rootDir, 'public', 'data', 'events.tmp.json');
 const REVIEW_QUEUE_FILE = path.join(rootDir, 'public', 'data', 'review_queue.json');
+const OPPORTUNITIES_FILE = path.join(rootDir, 'public', 'data', 'opportunities.json');
+const DESIGNERS_FILE = path.join(rootDir, 'public', 'data', 'designers.json');
+const ARTWORKS_FILE = path.join(rootDir, 'public', 'data', 'artworks.json');
 
 const VALID_CATEGORIES = [
   'exhibition',
@@ -24,13 +27,14 @@ const VALID_CATEGORIES = [
 
 function isValidUrl(url) {
   if (!url) return false;
+  const trimmed = url.trim();
+  if (trimmed.endsWith('#') || trimmed.includes('/#')) return false;
   try {
-    const parsed = new URL(url);
+    const parsed = new URL(trimmed);
     return (
       (parsed.protocol === 'http:' || parsed.protocol === 'https:') &&
       !parsed.hostname.includes('example.com') &&
       parsed.hostname !== 'localhost' &&
-      parsed.hash !== '#' &&
       parsed.pathname !== '/fake' &&
       parsed.pathname !== '/demo'
     );
@@ -101,102 +105,118 @@ function calculateStatus(e, nowMs = Date.now()) {
   const startMs = parseDateSafe(e.startDate, false);
   const endMs = e.endDate ? parseDateSafe(e.endDate, true) : parseDateSafe(e.startDate, true);
 
-  if (!startMs) return 'upcoming';
-  if (nowMs < startMs) return 'upcoming';
+  if (nowMs > endMs) return 'past';
   if (nowMs >= startMs && nowMs <= endMs) return 'happening-now';
-  return 'past';
+  return 'upcoming';
 }
 
-export async function runUpdatePipeline({ forceFail = false, mockEmpty = false } = {}) {
+/**
+ * Main ingestion, verification and integrity update runner
+ */
+export async function runUpdatePipeline(options = {}) {
   const report = {
     startTime: new Date().toISOString(),
+    success: false,
     sourcesChecked: 0,
     sourcesHealthy: 0,
     sourcesDegraded: 0,
-    sourcesFailed: 0,
-    totalParsed: 0,
+    sourcesFailing: 0,
+    totalIngested: 0,
     validRecords: 0,
-    rejectedRecords: 0,
+    quarantinedCount: 0,
     preservedLastKnownGood: false,
-    success: false,
-    error: null,
   };
 
   console.log('[Pipeline] Starting Art Gallery Live data ingestion & verification audit...');
 
-  // Step 1: Read previous known-good dataset
   let previousDataset = null;
   if (fs.existsSync(EVENTS_FILE)) {
     try {
       previousDataset = JSON.parse(fs.readFileSync(EVENTS_FILE, 'utf-8'));
     } catch (err) {
-      console.warn('[Pipeline] Could not parse existing events.json:', err.message);
+      console.warn('[Pipeline] Could not read existing events.json as fallback:', err.message);
     }
   }
 
   try {
-    if (forceFail) {
+    if (options.forceFailNetwork) {
       throw new Error('Forced pipeline network/parser failure simulation');
     }
 
+    // Load registered sources
     if (!fs.existsSync(SOURCES_FILE)) {
-      throw new Error(`Sources file missing at ${SOURCES_FILE}`);
+      throw new Error(`Missing sources registry file: ${SOURCES_FILE}`);
     }
-
-    const { sources } = JSON.parse(fs.readFileSync(SOURCES_FILE, 'utf-8'));
+    const sourcesData = JSON.parse(fs.readFileSync(SOURCES_FILE, 'utf-8'));
+    const sources = sourcesData.sources || [];
     report.sourcesChecked = sources.length;
 
-    // Check health of each registered source
-    const updatedSources = sources.map((source) => {
-      const isValid = source.officialUrl && isValidUrl(source.officialUrl);
-      if (isValid) {
-        if (source.healthStatus === 'degraded') {
-          report.sourcesDegraded++;
-        } else {
-          report.sourcesHealthy++;
-        }
-        return {
-          ...source,
-          lastCheckedTime: new Date().toISOString(),
-          lastSuccessTime: source.healthStatus === 'failing' ? source.lastSuccessTime : new Date().toISOString(),
-          httpStatus: 200,
-        };
-      } else {
-        report.sourcesFailed++;
-        return {
-          ...source,
-          lastCheckedTime: new Date().toISOString(),
-          healthStatus: 'failing',
-          consecutiveFailures: (source.consecutiveFailures || 0) + 1,
-        };
-      }
-    });
-
-    if (mockEmpty) {
-      console.warn('[Pipeline] Ingestion returned empty events set!');
-      throw new Error('Suspicious empty ingestion result: 0 events retrieved');
+    // Load existing events to audit
+    let rawEvents = [];
+    if (options.mockIncomingEvents) {
+      rawEvents = options.mockIncomingEvents;
+    } else if (previousDataset && Array.isArray(previousDataset.events)) {
+      rawEvents = previousDataset.events;
     }
 
-    // Step 2: Validate candidate events
-    const candidateEvents = previousDataset ? previousDataset.events : [];
-    report.totalParsed = candidateEvents.length;
+    report.totalIngested = rawEvents.length;
 
+    if (rawEvents.length === 0) {
+      console.error('[Pipeline] Ingestion returned empty events set!');
+      throw new Error(`Suspicious empty ingestion result: 0 events retrieved`);
+    }
+
+    // Step 1: Health check simulated / verified per registered source
+    const updatedSources = sources.map((s) => {
+      const isOk = isValidUrl(s.officialUrl);
+      const healthStatus = isOk ? 'healthy' : 'degraded';
+      if (healthStatus === 'healthy') report.sourcesHealthy++;
+      else report.sourcesDegraded++;
+
+      return {
+        ...s,
+        healthStatus,
+        lastCheckedTime: new Date().toISOString(),
+        lastSuccessTime: isOk ? new Date().toISOString() : s.lastSuccessTime,
+        consecutiveFailures: isOk ? 0 : (s.consecutiveFailures || 0) + 1,
+      };
+    });
+
+    // Step 2: Validate each event record against strict field-level rules
     const validatedEvents = [];
+    const quarantineQueue = [];
     const seenSignatures = new Set();
     const now = Date.now();
 
-    for (const event of candidateEvents) {
-      const { isValid, errors } = validateEvent(event);
-      if (!isValid) {
-        report.rejectedRecords++;
-        console.warn(`[Pipeline] Event "${event.title}" rejected: ${errors.join(', ')}`);
+    for (const event of rawEvents) {
+      const valResult = validateEvent(event);
+      if (!valResult.isValid) {
+        quarantineQueue.push({
+          id: event.id || `unverified-${Date.now()}-${Math.random()}`,
+          provisionalTitle: event.title || 'Untitled Record',
+          institutionName: event.sourceName || 'Unknown',
+          sourceUrl: event.officialUrl || '',
+          flagReason: valResult.errors.join('; '),
+          checkedAt: new Date().toISOString(),
+          status: 'insufficient-evidence',
+        });
+        report.quarantinedCount++;
         continue;
       }
 
-      // Conservative Deduplication
+      // Check duplicate signature
       const signature = `${(event.title || '').trim().toLowerCase()}|${(event.venueName || '').trim().toLowerCase()}|${event.startDate}`;
       if (seenSignatures.has(signature)) {
-        console.log(`[Pipeline] Deduplicating exact duplicate: ${event.title}`);
+        quarantineQueue.push({
+          id: event.id,
+          provisionalTitle: event.title,
+          institutionName: event.sourceName,
+          sourceUrl: event.officialUrl,
+          flagReason: 'Duplicate event title, venue, and start date detected',
+          checkedAt: new Date().toISOString(),
+          status: 'rejected',
+        });
+        report.quarantinedCount++;
         continue;
       }
       seenSignatures.add(signature);
@@ -227,7 +247,7 @@ export async function runUpdatePipeline({ forceFail = false, mockEmpty = false }
     const newDataset = {
       metadata: {
         appName: 'Art Gallery Live',
-        version: '1.1.0',
+        version: '1.2.0',
         lastSuccessfullyUpdated: new Date().toISOString(),
         totalEvents: validatedEvents.length,
         currentEvents: currentCount,
@@ -252,6 +272,54 @@ export async function runUpdatePipeline({ forceFail = false, mockEmpty = false }
     // Atomically move temp file to production events.json
     fs.copyFileSync(EVENTS_TMP_FILE, EVENTS_FILE);
     fs.unlinkSync(EVENTS_TMP_FILE);
+
+    // Also update review queue if items were quarantined
+    if (quarantineQueue.length > 0) {
+      let existingQueue = [];
+      if (fs.existsSync(REVIEW_QUEUE_FILE)) {
+        try { existingQueue = JSON.parse(fs.readFileSync(REVIEW_QUEUE_FILE, 'utf-8')).queue || []; } catch {}
+      }
+      fs.writeFileSync(
+        REVIEW_QUEUE_FILE,
+        JSON.stringify({ lastAudit: new Date().toISOString(), queue: [...existingQueue, ...quarantineQueue] }, null, 2),
+        'utf-8'
+      );
+    }
+
+    // Audit and update timestamps for Opportunities, Designers, and Artworks
+    if (fs.existsSync(OPPORTUNITIES_FILE)) {
+      const oppData = JSON.parse(fs.readFileSync(OPPORTUNITIES_FILE, 'utf-8'));
+      if (Array.isArray(oppData.opportunities)) {
+        oppData.metadata.lastSuccessfullyUpdated = new Date().toISOString();
+        // Update deadline statuses
+        oppData.opportunities = oppData.opportunities.map((opp) => {
+          const dTime = new Date(opp.submissionDeadline).getTime();
+          const daysLeft = Math.ceil((dTime - now) / (1000 * 60 * 60 * 24));
+          let status = 'open';
+          if (daysLeft < 0) status = 'closed';
+          else if (daysLeft <= 21) status = 'closing-soon';
+          return { ...opp, deadlineStatus: status };
+        });
+        oppData.metadata.openCount = oppData.opportunities.filter(o => o.deadlineStatus !== 'closed').length;
+        fs.writeFileSync(OPPORTUNITIES_FILE, JSON.stringify(oppData, null, 2), 'utf-8');
+      }
+    }
+
+    if (fs.existsSync(DESIGNERS_FILE)) {
+      const desData = JSON.parse(fs.readFileSync(DESIGNERS_FILE, 'utf-8'));
+      if (desData.metadata) {
+        desData.metadata.lastSuccessfullyUpdated = new Date().toISOString();
+        fs.writeFileSync(DESIGNERS_FILE, JSON.stringify(desData, null, 2), 'utf-8');
+      }
+    }
+
+    if (fs.existsSync(ARTWORKS_FILE)) {
+      const artData = JSON.parse(fs.readFileSync(ARTWORKS_FILE, 'utf-8'));
+      if (artData.metadata) {
+        artData.metadata.lastSuccessfullyUpdated = new Date().toISOString();
+        fs.writeFileSync(ARTWORKS_FILE, JSON.stringify(artData, null, 2), 'utf-8');
+      }
+    }
 
     report.success = true;
     report.endTime = new Date().toISOString();

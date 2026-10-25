@@ -157,10 +157,10 @@ async function runE2E() {
     const focusedTag = await page.evaluate(() => document.activeElement ? document.activeElement.tagName : '');
     report('10. Keyboard tab focus works', ['BUTTON', 'INPUT', 'A'].includes(focusedTag));
 
-    // 11. Mobile viewport (390x844) has no horizontal overflow
+    // 11. Mobile viewport (390x844) has no horizontal overflow on exhibitions
     await page.setViewport({ width: 390, height: 844 });
     await new Promise(r => setTimeout(r, 200));
-    const hasOverflow = await page.evaluate(() => {
+    let hasOverflow = await page.evaluate(() => {
       return document.documentElement.scrollWidth > document.documentElement.clientWidth;
     });
     report('11. Mobile viewport (390x844) has NO horizontal overflow', !hasOverflow);
@@ -178,6 +178,50 @@ async function runE2E() {
     // 14. No past events appear in default view
     const pastBadges = await page.$$eval('.status-badge.past', els => els.length);
     report('14. Past events excluded from default upcoming view', pastBadges === 0);
+
+    // 15. Tab navigation to Opportunities
+    await page.click('#tab-opportunities');
+    await new Promise(r => setTimeout(r, 200));
+    const oppCards = await page.$$eval('.opportunity-card', els => els.length);
+    report('15. Tab navigation to Opportunities renders verified open calls', oppCards >= 8);
+
+    // 16. Tab navigation to Designers
+    await page.click('#tab-designers');
+    await new Promise(r => setTimeout(r, 200));
+    const designerCards = await page.$$eval('.designer-card', els => els.length);
+    const roleBadges = await page.$$eval('.designer-role-badge', els => els.map(e => e.textContent.trim()));
+    report('16. Tab navigation to Designers renders studios with role badges', designerCards >= 8 && roleBadges.some(r => r.toLowerCase().includes('specifier')));
+
+    // 17. Tab navigation to Artwork Sourcing
+    await page.click('#tab-artworks');
+    await new Promise(r => setTimeout(r, 200));
+    const artworkCards = await page.$$eval('.artwork-card', els => els.length);
+    const dimensionsText = await page.$$eval('.dimension-val', els => els.map(e => e.textContent.trim()));
+    report('17. Tab navigation to Artwork Sourcing displays verified works and dimensions', artworkCards >= 8 && dimensionsText.some(d => d.includes('cm')));
+
+    // 18. Art Enquiry Specification workflow opens from artwork card
+    await page.click('.artwork-card .btn-primary');
+    await new Promise(r => setTimeout(r, 300));
+    const isEnquiryModalVisible = await page.$eval('.enquiry-modal', el => el.clientHeight > 100);
+    report('18. Art Enquiry modal opens with artwork prefilled', isEnquiryModalVisible);
+
+    // 19. Typing into form updates live specification preview
+    await page.type('#specifierName', 'Lead Architect Priya');
+    await new Promise(r => setTimeout(r, 200));
+    const previewContent = await page.$eval('.specification-code-block', el => el.textContent);
+    report('19. Typing updates live specification preview without leakage', previewContent.includes('Lead Architect Priya'));
+
+    // Close modal
+    await page.click('.modal-close-btn');
+    await new Promise(r => setTimeout(r, 200));
+
+    // 20. Mobile responsive check on Sourcing View (390x844)
+    await page.setViewport({ width: 390, height: 844 });
+    await new Promise(r => setTimeout(r, 200));
+    hasOverflow = await page.evaluate(() => {
+      return document.documentElement.scrollWidth > document.documentElement.clientWidth;
+    });
+    report('20. Mobile viewport (390x844) has zero horizontal overflow across all tabs', !hasOverflow);
 
   } catch (err) {
     console.error('Fatal E2E execution error:', err);

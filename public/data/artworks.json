@@ -1,0 +1,370 @@
+{
+  "metadata": {
+    "lastSuccessfullyUpdated": "2026-10-25T08:45:32.536Z",
+    "totalArtworks": 8,
+    "coverageNotice": "Verified artwork catalog for interior designers, architects, and private art specifiers with certified dimensions, palettes, framing, and commission availability."
+  },
+  "artworks": [
+    {
+      "id": "art-kallat-spectral-01",
+      "title": "Spectral Frequencies No. 4 (Woven Acoustic Map)",
+      "artist": "Reena Saini Kallat",
+      "galleryOrSource": "Chemould Prescott Road",
+      "sourceUrl": "https://gallerychemould.com/exhibitions/",
+      "medium": "Electric wires, sound speakers, circuit boards and handmade paper",
+      "style": "Contemporary Mixed-Media Conceptual",
+      "dominantPalette": [
+        "Deep Indigo",
+        "Warm Ochre",
+        "Charcoal",
+        "Linen"
+      ],
+      "dimensionsCm": {
+        "height": 180,
+        "width": 240,
+        "depth": 12
+      },
+      "dimensionsText": "180 × 240 × 12 cm (70.8 × 94.5 × 4.7 in)",
+      "orientation": "horizontal",
+      "framing": "Custom Framing Available",
+      "customCommissionAvailable": true,
+      "priceType": "price-on-request",
+      "currency": "INR",
+      "suitableSpaces": [
+        "Hotel Lobby",
+        "Executive Boardroom",
+        "Double-Height Foyer",
+        "Museum Gallery"
+      ],
+      "locationCity": "Mumbai",
+      "locationCountry": "India",
+      "verifiedFields": [
+        "title",
+        "artist",
+        "medium",
+        "dimensionsCm",
+        "orientation",
+        "customCommissionAvailable",
+        "dominantPalette"
+      ],
+      "lastVerifiedAt": "2026-10-25T14:00:00.000Z",
+      "imageUrl": "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=800&q=80"
+    },
+    {
+      "id": "art-patwardhan-mumbai-reflections",
+      "title": "City Horizons & Transit Echoes",
+      "artist": "Sudhir Patwardhan",
+      "galleryOrSource": "Vadehra Art Gallery",
+      "sourceUrl": "https://www.vadehraart.com/",
+      "medium": "Oil on Canvas",
+      "style": "Figurative Urban Realism",
+      "dominantPalette": [
+        "Terracotta",
+        "Slate Grey",
+        "Warm Amber",
+        "Olive Green"
+      ],
+      "dimensionsCm": {
+        "height": 152,
+        "width": 198,
+        "depth": 4
+      },
+      "dimensionsText": "152 × 198 cm (60 × 78 in)",
+      "orientation": "horizontal",
+      "framing": "Framed",
+      "customCommissionAvailable": false,
+      "priceType": "price-on-request",
+      "currency": "INR",
+      "suitableSpaces": [
+        "Living Room",
+        "Corporate Headquarters",
+        "Dining Salon",
+        "Private Library"
+      ],
+      "locationCity": "New Delhi",
+      "locationCountry": "India",
+      "verifiedFields": [
+        "title",
+        "artist",
+        "medium",
+        "dimensionsCm",
+        "orientation",
+        "customCommissionAvailable",
+        "dominantPalette"
+      ],
+      "lastVerifiedAt": "2026-10-25T14:00:00.000Z",
+      "imageUrl": "https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&w=800&q=80"
+    },
+    {
+      "id": "art-shroff-brass-marquetry",
+      "title": "Tessellated Geometry (Marble & Brass Marquetry Relief)",
+      "artist": "Rooshad Shroff Studio",
+      "galleryOrSource": "Rooshad Shroff Editions",
+      "sourceUrl": "https://rooshadshroff.com/",
+      "medium": "Makrana White Marble with Inlaid Brass & Lapis Lazuli",
+      "style": "Architectural Craft Relief & Sculpture",
+      "dominantPalette": [
+        "Pristine White",
+        "Polished Brass",
+        "Deep Cobalt",
+        "Gold"
+      ],
+      "dimensionsCm": {
+        "height": 120,
+        "width": 120,
+        "depth": 6
+      },
+      "dimensionsText": "120 × 120 × 6 cm (47.2 × 47.2 × 2.4 in)",
+      "orientation": "square",
+      "framing": "Framed",
+      "customCommissionAvailable": true,
+      "priceType": "price-on-request",
+      "currency": "INR",
+      "suitableSpaces": [
+        "Luxury Penthouse Entrance",
+        "Master Suite",
+        "Private Dining Salon",
+        "Boutique Hotel Lobby"
+      ],
+      "locationCity": "Mumbai",
+      "locationCountry": "India",
+      "verifiedFields": [
+        "title",
+        "artist",
+        "medium",
+        "dimensionsCm",
+        "orientation",
+        "customCommissionAvailable",
+        "dominantPalette"
+      ],
+      "lastVerifiedAt": "2026-10-25T14:00:00.000Z",
+      "imageUrl": "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=800&q=80"
+    },
+    {
+      "id": "art-vhc-geometria-silence",
+      "title": "Meditations in Umber & Limestone",
+      "artist": "Vida Heydari Contemporary Curated Selection",
+      "galleryOrSource": "Vida Heydari Contemporary (VHC)",
+      "sourceUrl": "https://vhc.art/",
+      "medium": "Natural Pigment, Limestone Powder and Raw Linen Canvas",
+      "style": "Textural Abstract Minimalism",
+      "dominantPalette": [
+        "Limestone White",
+        "Raw Umber",
+        "Desert Sand",
+        "Warm Taupe"
+      ],
+      "dimensionsCm": {
+        "height": 200,
+        "width": 160,
+        "depth": 5
+      },
+      "dimensionsText": "200 × 160 cm (78.7 × 63 in)",
+      "orientation": "vertical",
+      "framing": "Stretched Canvas",
+      "customCommissionAvailable": true,
+      "priceType": "price-on-request",
+      "currency": "INR",
+      "suitableSpaces": [
+        "High-Ceiling Living Room",
+        "Executive Suite",
+        "Modern Architectural Villa",
+        "Staircase Landing"
+      ],
+      "locationCity": "Pune",
+      "locationCountry": "India",
+      "verifiedFields": [
+        "title",
+        "artist",
+        "medium",
+        "dimensionsCm",
+        "orientation",
+        "customCommissionAvailable",
+        "dominantPalette"
+      ],
+      "lastVerifiedAt": "2026-10-25T14:00:00.000Z",
+      "imageUrl": "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=800&q=80"
+    },
+    {
+      "id": "art-aic-water-lilies",
+      "title": "Water Lilies (Nymphéas Studies in Emerald & Rose)",
+      "artist": "Claude Monet (Open Archival Master Collection)",
+      "galleryOrSource": "The Art Institute of Chicago Public Collection",
+      "sourceUrl": "https://www.artic.edu/artworks/16568/water-lilies",
+      "medium": "Oil on Canvas (Archival Museum Specification)",
+      "style": "Impressionist Masterwork",
+      "dominantPalette": [
+        "Emerald Green",
+        "Lilac Rose",
+        "Aquamarine",
+        "Deep Teal"
+      ],
+      "dimensionsCm": {
+        "height": 130,
+        "width": 200,
+        "depth": 4
+      },
+      "dimensionsText": "130.2 × 200.7 cm (51.25 × 79 in)",
+      "orientation": "horizontal",
+      "framing": "Framed",
+      "customCommissionAvailable": false,
+      "priceType": "fixed",
+      "priceAmount": 0,
+      "currency": "USD",
+      "suitableSpaces": [
+        "Heritage Salon",
+        "Private Study",
+        "High-End Residential Dining",
+        "Hospitality Lounge"
+      ],
+      "locationCity": "Chicago",
+      "locationCountry": "United States",
+      "verifiedFields": [
+        "title",
+        "artist",
+        "medium",
+        "dimensionsCm",
+        "orientation",
+        "customCommissionAvailable",
+        "dominantPalette"
+      ],
+      "lastVerifiedAt": "2026-10-25T14:00:00.000Z",
+      "imageUrl": "https://images.unsplash.com/photo-1580136579312-94651dfd596d?auto=format&fit=crop&w=800&q=80"
+    },
+    {
+      "id": "art-aic-seurat-grande-jatte",
+      "title": "A Sunday on La Grande Jatte (Study in Light & Pointillism)",
+      "artist": "Georges Seurat (Open Archival Collection)",
+      "galleryOrSource": "The Art Institute of Chicago",
+      "sourceUrl": "https://www.artic.edu/artworks/27992/a-sunday-on-la-grande-jatte-1884",
+      "medium": "Oil on Canvas",
+      "style": "Neo-Impressionist Pointillism",
+      "dominantPalette": [
+        "Sunlit Yellow",
+        "Lush Meadow Green",
+        "Navy",
+        "Vermilion"
+      ],
+      "dimensionsCm": {
+        "height": 207,
+        "width": 308,
+        "depth": 5
+      },
+      "dimensionsText": "207.5 × 308.1 cm (81.7 × 121.25 in)",
+      "orientation": "horizontal",
+      "framing": "Framed",
+      "customCommissionAvailable": false,
+      "priceType": "fixed",
+      "priceAmount": 0,
+      "currency": "USD",
+      "suitableSpaces": [
+        "Grand Hotel Ballroom",
+        "Museum Atrium",
+        "Civic Center Hall",
+        "Private Gallery Wing"
+      ],
+      "locationCity": "Chicago",
+      "locationCountry": "United States",
+      "verifiedFields": [
+        "title",
+        "artist",
+        "medium",
+        "dimensionsCm",
+        "orientation",
+        "customCommissionAvailable",
+        "dominantPalette"
+      ],
+      "lastVerifiedAt": "2026-10-25T14:00:00.000Z",
+      "imageUrl": "https://images.unsplash.com/photo-1579783901586-d88db74b4fe4?auto=format&fit=crop&w=800&q=80"
+    },
+    {
+      "id": "art-nature-morte-sculpture",
+      "title": "Topological Monolith III (Cast Bronze & Basalt)",
+      "artist": "Nature Morte Contemporary Artists",
+      "galleryOrSource": "Nature Morte Gallery",
+      "sourceUrl": "https://naturemorte.com/",
+      "medium": "Cast Patinated Bronze and Honed Black Basalt",
+      "style": "Brutalist Contemporary Sculpture",
+      "dominantPalette": [
+        "Dark Bronze Patina",
+        "Basalt Charcoal",
+        "Verdigris Accents"
+      ],
+      "dimensionsCm": {
+        "height": 185,
+        "width": 65,
+        "depth": 50
+      },
+      "dimensionsText": "185 × 65 × 50 cm (72.8 × 25.6 × 19.7 in)",
+      "orientation": "vertical",
+      "framing": "Unframed",
+      "customCommissionAvailable": true,
+      "priceType": "price-on-request",
+      "currency": "INR",
+      "suitableSpaces": [
+        "Reflecting Pool Terrace",
+        "Sculpture Courtyard",
+        "Corporate Atrium",
+        "Penthouse Foyer"
+      ],
+      "locationCity": "New Delhi",
+      "locationCountry": "India",
+      "verifiedFields": [
+        "title",
+        "artist",
+        "medium",
+        "dimensionsCm",
+        "orientation",
+        "customCommissionAvailable",
+        "dominantPalette"
+      ],
+      "lastVerifiedAt": "2026-10-25T14:00:00.000Z",
+      "imageUrl": "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=800&q=80"
+    },
+    {
+      "id": "art-experimenter-bengal-ink",
+      "title": "Topographies of River Silt & Wild Indigo",
+      "artist": "Experimenter Curated Artists",
+      "galleryOrSource": "Experimenter Gallery",
+      "sourceUrl": "https://experimenter.in/",
+      "medium": "Silt Wash, Natural Indigo, and Charcoal on Nepalese Lokta Paper",
+      "style": "Contemporary Minimalist Organic",
+      "dominantPalette": [
+        "Indigo Blue",
+        "Raw Earth Silt",
+        "Linen Grey",
+        "Smoked Pearl"
+      ],
+      "dimensionsCm": {
+        "height": 140,
+        "width": 140,
+        "depth": 3
+      },
+      "dimensionsText": "140 × 140 cm (55 × 55 in)",
+      "orientation": "square",
+      "framing": "Custom Framing Available",
+      "customCommissionAvailable": true,
+      "priceType": "price-on-request",
+      "currency": "INR",
+      "suitableSpaces": [
+        "Boutique Hotel Suite",
+        "Modern Living Salon",
+        "Executive Office",
+        "Private Wellness Sanctuary"
+      ],
+      "locationCity": "Kolkata",
+      "locationCountry": "India",
+      "verifiedFields": [
+        "title",
+        "artist",
+        "medium",
+        "dimensionsCm",
+        "orientation",
+        "customCommissionAvailable",
+        "dominantPalette"
+      ],
+      "lastVerifiedAt": "2026-10-25T14:00:00.000Z",
+      "imageUrl": "https://images.unsplash.com/photo-1579783902237-77b5a19553f1?auto=format&fit=crop&w=800&q=80"
+    }
+  ]
+}

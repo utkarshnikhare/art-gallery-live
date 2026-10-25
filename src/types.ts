@@ -140,3 +140,193 @@ export interface FilterState {
   format: 'all' | 'in-person' | 'online' | 'hybrid';
   verificationLevel: 'all' | 'official-event-verified' | 'has-booking';
 }
+
+// ==========================================
+// NEW MODULE: ART OPPORTUNITIES & OPEN CALLS
+// ==========================================
+
+export type OpportunityType = 
+  | 'residency'
+  | 'open-call'
+  | 'grant'
+  | 'award'
+  | 'fellowship'
+  | 'public-commission';
+
+export type OpportunityDeadlineStatus = 'open' | 'closing-soon' | 'closed';
+
+export interface ArtOpportunity {
+  id: string;
+  title: string;
+  opportunityType: OpportunityType;
+  organiser: string;
+  hostInstitution: string;
+  city: string;
+  country: string;
+  format: EventFormat;
+  description: string;
+  submissionDeadline: string; // ISO YYYY-MM-DD
+  deadlineStatus: OpportunityDeadlineStatus;
+  entryFee: EntryFee;
+  stipendOrAwardText?: string;
+  eligibilitySummary: string;
+  officialGuidelinesUrl: string;
+  submissionUrl?: string;
+  sourceName: string;
+  verifiedFields: string[];
+  lastVerifiedAt: string;
+}
+
+export interface OpportunitiesDataset {
+  metadata: {
+    lastSuccessfullyUpdated: string;
+    totalOpportunities: number;
+    openCount: number;
+    coverageNotice: string;
+  };
+  opportunities: ArtOpportunity[];
+}
+
+export interface OpportunityFilterState {
+  searchQuery: string;
+  opportunityType: string; // 'all' | OpportunityType
+  deadlineStatus: string; // 'all' | 'open' | 'closing-soon'
+  fee: string; // 'all' | 'free' | 'price'
+  country: string; // 'all' | 'India' | 'International'
+}
+
+// ==============================================================
+// NEW MODULE: INTERIOR DESIGNERS & ART BUYERS / SPECIFIERS
+// ==============================================================
+
+export type ArtSourcingRole = 
+  | 'specifier'
+  | 'consultant'
+  | 'purchaser'
+  | 'advisory'
+  | 'buying-role-unconfirmed';
+
+export type ProjectType = 
+  | 'residential'
+  | 'hospitality'
+  | 'commercial'
+  | 'public-space'
+  | 'cultural';
+
+export interface InteriorDesignerProfile {
+  id: string;
+  studioName: string;
+  principalName?: string;
+  city: string;
+  state?: string;
+  country: string;
+  address?: string;
+  officialWebsite: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  inquiryPortalUrl?: string;
+  specialisations: string[];
+  projectTypes: ProjectType[];
+  artSourcingRole: ArtSourcingRole;
+  verifiedPortfolioProjects: string[];
+  verificationStatus: 'studio-verified' | 'curated-directory';
+  verifiedFields: string[];
+  lastVerifiedAt: string;
+}
+
+export interface DesignersDataset {
+  metadata: {
+    lastSuccessfullyUpdated: string;
+    totalStudios: number;
+    coverageNotice: string;
+  };
+  designers: InteriorDesignerProfile[];
+}
+
+export interface DesignerFilterState {
+  searchQuery: string;
+  country: string; // 'all' | 'India' | 'International' | 'UK' | 'USA'
+  city: string; // 'all' | string
+  projectType: string; // 'all' | ProjectType
+  sourcingRole: string; // 'all' | ArtSourcingRole
+}
+
+// ==========================================
+// NEW MODULE: ARTWORK SOURCING FOR INTERIORS
+// ==========================================
+
+export type ArtworkOrientation = 'horizontal' | 'vertical' | 'square';
+
+export type FramingStatus = 'Framed' | 'Unframed' | 'Stretched Canvas' | 'Custom Framing Available';
+
+export interface ArtworkSourcingItem {
+  id: string;
+  title: string;
+  artist: string;
+  galleryOrSource: string;
+  sourceUrl: string;
+  medium: string;
+  style: string;
+  dominantPalette: string[]; // e.g. ['Warm Ochre', 'Raw Linen', 'Deep Charcoal']
+  dimensionsCm: {
+    height: number;
+    width: number;
+    depth?: number;
+  };
+  dimensionsText: string;
+  orientation: ArtworkOrientation;
+  framing: FramingStatus;
+  customCommissionAvailable: boolean;
+  priceType: 'fixed' | 'price-on-request' | 'range';
+  priceAmount?: number;
+  currency?: string;
+  suitableSpaces: string[]; // e.g. ['Hotel Lobby', 'Living Room', 'Executive Boardroom']
+  locationCity: string;
+  locationCountry: string;
+  verifiedFields: string[];
+  lastVerifiedAt: string;
+  imageUrl: string;
+}
+
+export interface ArtworksDataset {
+  metadata: {
+    lastSuccessfullyUpdated: string;
+    totalArtworks: number;
+    coverageNotice: string;
+  };
+  artworks: ArtworkSourcingItem[];
+}
+
+export interface ArtworkFilterState {
+  searchQuery: string;
+  medium: string; // 'all' | string
+  style: string; // 'all' | string
+  orientation: string; // 'all' | ArtworkOrientation
+  scale: string; // 'all' | 'large' (>=120cm) | 'medium' (60-120cm) | 'small' (<60cm)
+  commissionOnly: boolean;
+  suitableSpace: string; // 'all' | string
+}
+
+// ==========================================
+// ART ENQUIRY WORKFLOW MODEL
+// ==========================================
+
+export interface ArtEnquiryPayload {
+  specifierName: string;
+  firmName?: string;
+  contactEmail: string;
+  contactPhone?: string;
+  projectType: string;
+  targetSpace: string;
+  dimensionsRequired?: string;
+  budgetRange?: string;
+  timeline?: string;
+  isCustomCommission: boolean;
+  notes?: string;
+  targetItemTitle?: string;
+  targetArtistOrStudio?: string;
+  recipientEmail?: string;
+  recipientName?: string;
+}
+
+export type ActiveAppTab = 'events' | 'opportunities' | 'designers' | 'artworks';

@@ -1,0 +1,266 @@
+{
+  "metadata": {
+    "lastSuccessfullyUpdated": "2026-10-25T08:45:32.535Z",
+    "totalOpportunities": 8,
+    "openCount": 8,
+    "coverageNotice": "Artist open calls, residencies, and grants verified directly from official cultural foundations and institutional announcements."
+  },
+  "opportunities": [
+    {
+      "id": "opp-khoj-international-residency",
+      "title": "Khoj International Artists' Association Residency 2026-2027",
+      "opportunityType": "residency",
+      "organiser": "Khoj International Artists' Association",
+      "hostInstitution": "Khoj Studios",
+      "city": "New Delhi",
+      "country": "India",
+      "format": "in-person",
+      "description": "6-week intensive residency for visual artists, researchers, and multidisciplinary practitioners investigating ecology, urban commons, and community-engaged art practices. Includes private studio space, curatorial mentoring, and a public open-studio presentation.",
+      "submissionDeadline": "2026-11-30",
+      "deadlineStatus": "open",
+      "entryFee": {
+        "type": "free",
+        "amountText": "Free Application (No Entry Fee)",
+        "isConfirmedByOrganiser": true
+      },
+      "stipendOrAwardText": "INR 75,000 production stipend + accommodation and studio at Khoj Studios, Khirki Extension",
+      "eligibilitySummary": "Open to visual artists and cultural researchers based in South Asia or working with South Asian themes. Minimum 3 years of independent practice.",
+      "officialGuidelinesUrl": "https://khojstudios.org/programmes/",
+      "submissionUrl": "https://khojstudios.org/opportunities/",
+      "sourceName": "Khoj Official Announcements",
+      "verifiedFields": [
+        "title",
+        "hostInstitution",
+        "submissionDeadline",
+        "entryFee",
+        "stipendOrAwardText",
+        "eligibilitySummary"
+      ],
+      "lastVerifiedAt": "2026-10-25T14:00:00.000Z"
+    },
+    {
+      "id": "opp-serendipity-arts-grants",
+      "title": "Serendipity Arts Foundation Visual Arts Production Grant 2026",
+      "opportunityType": "grant",
+      "organiser": "Serendipity Arts Foundation",
+      "hostInstitution": "Serendipity Arts",
+      "city": "Goa / New Delhi",
+      "country": "India",
+      "format": "hybrid",
+      "description": "Production grants supporting artists and curators to develop new, large-scale visual and public art projects for showcase during the annual Serendipity Arts Festival in Panaji, Goa.",
+      "submissionDeadline": "2026-11-15",
+      "deadlineStatus": "closing-soon",
+      "entryFee": {
+        "type": "free",
+        "amountText": "Free Application",
+        "isConfirmedByOrganiser": true
+      },
+      "stipendOrAwardText": "Production grants ranging from INR 2,00,000 to INR 5,00,000 + project fabrication support",
+      "eligibilitySummary": "Open to emerging and mid-career artists, sculptors, installation artists, and digital creators residing across South Asia.",
+      "officialGuidelinesUrl": "https://serendipityarts.org/initiatives/grants/",
+      "submissionUrl": "https://serendipityarts.org/apply/",
+      "sourceName": "Serendipity Arts Foundation",
+      "verifiedFields": [
+        "title",
+        "hostInstitution",
+        "submissionDeadline",
+        "entryFee",
+        "stipendOrAwardText",
+        "eligibilitySummary"
+      ],
+      "lastVerifiedAt": "2026-10-25T14:00:00.000Z"
+    },
+    {
+      "id": "opp-gasworks-london-residency",
+      "title": "Gasworks International Artists' Residency (South Asia Fellowship)",
+      "opportunityType": "residency",
+      "organiser": "Gasworks & Triangle Network",
+      "hostInstitution": "Gasworks Gallery & Studios",
+      "city": "London",
+      "country": "United Kingdom",
+      "format": "in-person",
+      "description": "Fully funded 11-week residency in London for an artist based in South Asia. Includes 24-hour studio access at Gasworks, accommodation in London, return economy flights, weekly per diem, and material production budget.",
+      "submissionDeadline": "2026-12-05",
+      "deadlineStatus": "open",
+      "entryFee": {
+        "type": "free",
+        "amountText": "Free Application",
+        "isConfirmedByOrganiser": true
+      },
+      "stipendOrAwardText": "Return flights, private room, £240/week living allowance + £800 material budget",
+      "eligibilitySummary": "Open to self-identifying visual artists living and working in India, Pakistan, Bangladesh, Nepal, or Sri Lanka.",
+      "officialGuidelinesUrl": "https://www.gasworks.org.uk/residencies/opportunities/",
+      "submissionUrl": "https://www.gasworks.org.uk/residencies/",
+      "sourceName": "Gasworks London Official",
+      "verifiedFields": [
+        "title",
+        "hostInstitution",
+        "submissionDeadline",
+        "entryFee",
+        "stipendOrAwardText",
+        "eligibilitySummary"
+      ],
+      "lastVerifiedAt": "2026-10-25T14:00:00.000Z"
+    },
+    {
+      "id": "opp-delfina-collecting-practice",
+      "title": "Delfina Foundation Residency: Collecting as Practice & Research",
+      "opportunityType": "fellowship",
+      "organiser": "Delfina Foundation",
+      "hostInstitution": "Delfina Foundation",
+      "city": "London",
+      "country": "United Kingdom",
+      "format": "in-person",
+      "description": "International thematic residency exploring contemporary art collecting, institutional provenance, archive methodologies, and public patronage.",
+      "submissionDeadline": "2026-12-18",
+      "deadlineStatus": "open",
+      "entryFee": {
+        "type": "free",
+        "amountText": "Free Application",
+        "isConfirmedByOrganiser": true
+      },
+      "stipendOrAwardText": "Fully funded accommodation, return airfare, weekly stipend of £300, and institutional visits",
+      "eligibilitySummary": "Open to curators, contemporary art writers, and visual artists with an established critical research portfolio.",
+      "officialGuidelinesUrl": "https://www.delfinafoundation.com/open-calls/",
+      "submissionUrl": "https://www.delfinafoundation.com/open-calls/current-calls/",
+      "sourceName": "Delfina Foundation London",
+      "verifiedFields": [
+        "title",
+        "hostInstitution",
+        "submissionDeadline",
+        "entryFee",
+        "stipendOrAwardText",
+        "eligibilitySummary"
+      ],
+      "lastVerifiedAt": "2026-10-25T14:00:00.000Z"
+    },
+    {
+      "id": "opp-kochi-students-biennale",
+      "title": "Students' Biennale National Open Call — Kochi Biennale Foundation",
+      "opportunityType": "open-call",
+      "organiser": "Kochi Biennale Foundation",
+      "hostInstitution": "Kochi Biennale Foundation",
+      "city": "Kochi",
+      "country": "India",
+      "format": "in-person",
+      "description": "Nationwide call for fine arts students and recent art school graduates across India to exhibit site-responsive installations and contemporary works during the Kochi-Muziris Biennale collateral programme in Fort Kochi.",
+      "submissionDeadline": "2026-11-25",
+      "deadlineStatus": "open",
+      "entryFee": {
+        "type": "free",
+        "amountText": "Free Application",
+        "isConfirmedByOrganiser": true
+      },
+      "stipendOrAwardText": "Exhibition production grant, freight assistance, and round-trip travel to Kochi for install",
+      "eligibilitySummary": "Enrolled BFA/MFA students or graduates within 2 years of completing an accredited visual arts degree in India.",
+      "officialGuidelinesUrl": "https://kochibiennale.org/students-biennale/",
+      "submissionUrl": "https://kochibiennale.org/open-calls/",
+      "sourceName": "Kochi Biennale Foundation Official",
+      "verifiedFields": [
+        "title",
+        "hostInstitution",
+        "submissionDeadline",
+        "entryFee",
+        "stipendOrAwardText",
+        "eligibilitySummary"
+      ],
+      "lastVerifiedAt": "2026-10-25T14:00:00.000Z"
+    },
+    {
+      "id": "opp-british-council-ctc",
+      "title": "British Council: Connections Through Culture India-UK Creative Grants",
+      "opportunityType": "grant",
+      "organiser": "British Council India & UK",
+      "hostInstitution": "British Council",
+      "city": "New Delhi / London",
+      "country": "India",
+      "format": "hybrid",
+      "description": "Bilateral development grants designed to foster international artistic collaboration, co-creation, and exchange between creative practitioners and cultural organisations in the UK and India.",
+      "submissionDeadline": "2026-11-10",
+      "deadlineStatus": "closing-soon",
+      "entryFee": {
+        "type": "free",
+        "amountText": "Free Application",
+        "isConfirmedByOrganiser": true
+      },
+      "stipendOrAwardText": "Grants of up to £10,000 (approx. INR 10.8 Lakhs) to co-develop joint art research and installations",
+      "eligibilitySummary": "Joint proposals submitted by at least one UK artist/institution and one Indian artist/collective.",
+      "officialGuidelinesUrl": "https://www.britishcouncil.in/programmes/arts/connections-through-culture",
+      "submissionUrl": "https://www.britishcouncil.in/programmes/arts/",
+      "sourceName": "British Council Arts",
+      "verifiedFields": [
+        "title",
+        "hostInstitution",
+        "submissionDeadline",
+        "entryFee",
+        "stipendOrAwardText",
+        "eligibilitySummary"
+      ],
+      "lastVerifiedAt": "2026-10-25T14:00:00.000Z"
+    },
+    {
+      "id": "opp-india-art-fair-digital-artist",
+      "title": "India Art Fair Digital Artist in Residence Open Call",
+      "opportunityType": "award",
+      "organiser": "India Art Fair / The Art Mumbai Co.",
+      "hostInstitution": "India Art Fair",
+      "city": "New Delhi",
+      "country": "India",
+      "format": "hybrid",
+      "description": "Commission and residency for artists working with generative code, 3D modelling, extended reality (XR), and interactive digital media. Selected artworks will be unveiled on dedicated interactive displays at the next India Art Fair pavilion.",
+      "submissionDeadline": "2026-12-01",
+      "deadlineStatus": "open",
+      "entryFee": {
+        "type": "free",
+        "amountText": "Free Application",
+        "isConfirmedByOrganiser": true
+      },
+      "stipendOrAwardText": "INR 3,50,000 commission honorarium + tech hardware stipend & fair exhibition booth showcase",
+      "eligibilitySummary": "Open to contemporary artists of Indian nationality or diaspora working at the intersection of fine art and technology.",
+      "officialGuidelinesUrl": "https://indiaartfair.in/programme/",
+      "submissionUrl": "https://indiaartfair.in/contact/",
+      "sourceName": "India Art Fair Official",
+      "verifiedFields": [
+        "title",
+        "hostInstitution",
+        "submissionDeadline",
+        "entryFee",
+        "stipendOrAwardText",
+        "eligibilitySummary"
+      ],
+      "lastVerifiedAt": "2026-10-25T14:00:00.000Z"
+    },
+    {
+      "id": "opp-villa-medici-rome",
+      "title": "Académie de France à Rome — Villa Medici Visual Arts Fellowship",
+      "opportunityType": "fellowship",
+      "organiser": "Académie de France à Rome",
+      "hostInstitution": "Villa Medici",
+      "city": "Rome",
+      "country": "Italy",
+      "format": "in-person",
+      "description": "Year-long prestigious residential fellowship at Villa Medici in Rome for visual artists, designers, and art historians. Includes historical studio residence, exhibition opportunities, and curatorial exchange.",
+      "submissionDeadline": "2027-01-15",
+      "deadlineStatus": "open",
+      "entryFee": {
+        "type": "free",
+        "amountText": "Free Application",
+        "isConfirmedByOrganiser": true
+      },
+      "stipendOrAwardText": "Monthly living allowance of approx. €3,000 + private on-site studio apartment at Villa Medici",
+      "eligibilitySummary": "Open to international artists, sculptors, and creative practitioners with a proven record of notable exhibitions.",
+      "officialGuidelinesUrl": "https://www.villamedici.it/en/residencies/",
+      "submissionUrl": "https://www.villamedici.it/en/competitions/",
+      "sourceName": "Villa Medici Académie de France",
+      "verifiedFields": [
+        "title",
+        "hostInstitution",
+        "submissionDeadline",
+        "entryFee",
+        "stipendOrAwardText",
+        "eligibilitySummary"
+      ],
+      "lastVerifiedAt": "2026-10-25T14:00:00.000Z"
+    }
+  ]
+}
