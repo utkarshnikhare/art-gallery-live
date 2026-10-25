@@ -19,8 +19,14 @@ import {
   encryptAesGcm,
   decryptAesGcm,
   isCertificateValid,
+  generateStudioKeypair,
+  signArtworkFingerprint,
+  verifyArtworkSignature,
+  createPortableProofToken,
+  verifyPortableProofToken,
   PROVENANCE_LEGAL_NOTICE
 } from '../src/utils/cryptoUtils.ts';
+import { convertCurrency, summarizeMultiCurrency, FX_RATES_TO_USD } from '../src/utils/currencyService.ts';
 import { calculatePricingRecommendation } from '../src/utils/pricingService.ts';
 import { parseCsvText, validateArtworkImport, exportToCsv } from '../src/utils/csvService.ts';
 import { generateQrSvgDataUri } from '../src/utils/qrUtils.ts';
@@ -870,6 +876,152 @@ it('40. Security: CSV formula injection defense sanitizes formula triggers and r
     },
     /exceeds maximum allowable size/
   );
+});
+
+// 41. Asymmetric Cryptography: Studio ECDSA P-256 keypair generation, signing, and verification
+await itAsync('41. Asymmetric Cryptography: Studio ECDSA P-256 keypair generation, signing, and verification', async () => {
+  const keypair = await generateStudioKeypair();
+  assert.ok(keypair.publicKeyJwk && keypair.publicKeyJwk.kty === 'EC');
+  assert.ok(keypair.privateKeyJwk && keypair.privateKeyJwk.kty === 'EC');
+  assert.equal(keypair.publicKeyJwk.crv, 'P-256');
+
+  const testFingerprint = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
+  const signatureHex = await signArtworkFingerprint(testFingerprint, keypair.privateKeyJwk);
+  assert.ok(signatureHex.length > 50, 'Signature should be valid hex string');
+
+  // Verify valid signature with public key
+  const isValid = await verifyArtworkSignature(testFingerprint, signatureHex, keypair.publicKeyJwk);
+  assert.equal(isValid, true, 'Valid signature must verify successfully');
+
+  // Altered fingerprint should fail verification
+  const alteredFingerprint = 'ffffc44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
+  const isAlteredValid = await verifyArtworkSignature(alteredFingerprint, signatureHex, keypair.publicKeyJwk);
+  assert.equal(isAlteredValid, false, 'Altered fingerprint must fail signature verification');
+
+  // Generate a different keypair to test non-repudiation
+  const impostorKeypair = await generateStudioKeypair();
+  const isImpostorValid = await verifyArtworkSignature(testFingerprint, signatureHex, impostorKeypair.publicKeyJwk);
+  assert.equal(isImpostorValid, false, 'Signature verified against wrong public key must fail');
+});
+
+// 42. Self-Contained Offline Verification: Portable QR proof token round-trip across devices
+await itAsync('42. Self-Contained Offline Verification: Portable QR proof token round-trip across devices', async () => {
+  const keypair = await generateStudioKeypair();
+  const cert = {
+    certificateId: 'MK-COA-TEST-OFFLINE-001',
+    artworkId: 'art-offline-1',
+    artworkTitle: 'Celestial Drift',
+    artistName: 'Suhasini Mehta',
+    yearCreated: 2026,
+    medium: 'Pigment and Gold Leaf on Woven Linen',
+    dimensionsText: '120 × 120 cm',
+    editionText: 'Original 1/1',
+    issueDate: '2026-10-25',
+    issuer: 'Studio Suhasini Mehta Vault',
+    sha256Fingerprint: '',
+    verificationUrl: '',
+    status: 'valid',
+    blockchainAnchor: { isAnchored: false, note: '' }
+  };
+
+  const fingerprint = generateArtworkFingerprint({
+    title: cert.artworkTitle,
+    artistName: cert.artistName,
+    yearCreated: cert.yearCreated,
+    medium: cert.medium,
+    dimensionsText: cert.dimensionsText,
+    editionText: cert.editionText,
+    uniqueSalt: cert.certificateId
+  });
+  cert.sha256Fingerprint = fingerprint;
+
+  const signatureHex = await signArtworkFingerprint(fingerprint, keypair.privateKeyJwk);
+  cert.ecdsaSignature = signatureHex;
+  cert.publicKeyJwk = keypair.publicKeyJwk;
+
+  const proofToken = createPortableProofToken(cert);
+
+  assert.ok(proofToken.length > 50, 'Proof token must be non-empty');
+  assert.ok(!proofToken.includes('+') && !proofToken.includes('/'), 'Token must be URL-safe Base64');
+
+  // Verify the portable proof token offline without any external state
+  const verificationResult = await verifyPortableProofToken(proofToken);
+  if (!verificationResult.isValid) {
+    console.error('Test 42 verification error:', verificationResult.error);
+  }
+  assert.equal(verificationResult.isValid, true, 'Portable proof token must verify true');
+  assert.equal(verificationResult.isSignatureVerified, true, 'ECDSA signature must verify true');
+  assert.equal(verificationResult.cert?.certificateId, 'MK-COA-TEST-OFFLINE-001');
+  assert.equal(verificationResult.cert?.artworkTitle, 'Celestial Drift');
+});
+
+// 43. Foreign Exchange Engine: Multi-currency conversion matrix and portfolio consolidation
+it('43. Foreign Exchange Engine: Multi-currency conversion matrix and portfolio consolidation', () => {
+  // Direct USD conversion
+  assert.equal(convertCurrency(100, 'USD', 'USD'), 100);
+
+  // EUR to USD conversion (1 EUR = ~1.08 USD)
+  const eurInUsd = convertCurrency(1000, 'EUR', 'USD');
+  assert.equal(eurInUsd, 1080);
+
+  // GBP to EUR cross-rate (1 GBP = 1.29 USD, 1 EUR = 1.08 USD => 1000 GBP = ~1194.44 EUR)
+  const gbpInEur = convertCurrency(1000, 'GBP', 'EUR');
+  assert.ok(gbpInEur >= 1180 && gbpInEur <= 1200, `GBP to EUR cross rate should be ~1194, got ${gbpInEur}`);
+
+  // INR to USD (1 INR = 0.0119 USD => 100,000 INR = 1,190 USD)
+  const inrInUsd = convertCurrency(100000, 'INR', 'USD');
+  assert.equal(inrInUsd, 1190);
+
+  // Multi-currency consolidation
+  const items = [
+    { amount: 1000, currency: 'USD' },
+    { amount: 1000, currency: 'EUR' }, // 1080 USD
+    { amount: 100000, currency: 'INR' }, // 1190 USD
+  ];
+  const summary = summarizeMultiCurrency(items, 'USD');
+  assert.equal(summary.consolidatedBaseTotal, 1000 + 1080 + 1190); // 3270 USD
+  assert.equal(summary.totalsByCurrency['USD'], 1000);
+  assert.equal(summary.totalsByCurrency['EUR'], 1000);
+  assert.equal(summary.totalsByCurrency['INR'], 100000);
+  assert.equal(summary.hasMultipleCurrencies, true);
+});
+
+// 44. Multi-Tenant Studio Partitioning: Workspace storage keys isolate multiple tenants
+it('44. Multi-Tenant Studio Partitioning: Workspace storage keys isolate multiple tenants', () => {
+  // Create a mock localStorage for multi-tenant verification
+  const store = {};
+  const mockLocalStorage = {
+    getItem: (k) => store[k] || null,
+    setItem: (k, v) => { store[k] = v; },
+    removeItem: (k) => { delete store[k]; },
+    clear: () => { Object.keys(store).forEach(k => delete store[k]); }
+  };
+  globalThis.localStorage = mockLocalStorage;
+
+  // Tenant A saves data
+  const tenantAData = {
+    ...EMPTY_WORKSPACE,
+    profile: { ...EMPTY_WORKSPACE.profile, artistName: 'Studio Alice' },
+  };
+  StorageService.saveWorkspace(tenantAData, 'tenant_alice');
+
+  // Tenant B saves data
+  const tenantBData = {
+    ...EMPTY_WORKSPACE,
+    profile: { ...EMPTY_WORKSPACE.profile, artistName: 'Studio Bob' },
+  };
+  StorageService.saveWorkspace(tenantBData, 'tenant_bob');
+
+  // Verify data is segregated under separate keys in localStorage
+  assert.ok(store['morrowkind_workspace_tenant_alice'], 'Alice workspace key exists');
+  assert.ok(store['morrowkind_workspace_tenant_bob'], 'Bob workspace key exists');
+
+  // Load and verify zero cross-contamination
+  const loadedAlice = StorageService.loadWorkspace('tenant_alice');
+  const loadedBob = StorageService.loadWorkspace('tenant_bob');
+
+  assert.equal(loadedAlice.profile.artistName, 'Studio Alice');
+  assert.equal(loadedBob.profile.artistName, 'Studio Bob');
 });
 
 console.log(`\nData Integrity & Adversarial Tests: ${passed} PASSED, ${failed} FAILED\n`);

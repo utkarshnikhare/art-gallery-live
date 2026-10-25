@@ -55,15 +55,20 @@ export const EMPTY_WORKSPACE: ArtistWorkspaceState = {
 };
 
 export class StorageService {
+  static getStorageKey(tenantId = 'default'): string {
+    return tenantId === 'default' ? STORAGE_KEY : `morrowkind_workspace_${tenantId}`;
+  }
+
   /**
    * Load entire workspace state from storage
    */
-  static loadWorkspace(): ArtistWorkspaceState {
+  static loadWorkspace(tenantId = 'default'): ArtistWorkspaceState {
     try {
       if (typeof localStorage === 'undefined') {
         return EMPTY_WORKSPACE;
       }
-      const serialized = localStorage.getItem(STORAGE_KEY);
+      const key = StorageService.getStorageKey(tenantId);
+      const serialized = localStorage.getItem(key);
       if (!serialized) {
         return EMPTY_WORKSPACE;
       }
@@ -89,17 +94,18 @@ export class StorageService {
   /**
    * Save entire workspace state atomically with QuotaExceededError protection
    */
-  static saveWorkspace(state: ArtistWorkspaceState): { success: boolean; error?: string } {
+  static saveWorkspace(state: ArtistWorkspaceState, tenantId = 'default'): { success: boolean; error?: string } {
     try {
       if (typeof localStorage === 'undefined') {
         return { success: true };
       }
+      const key = StorageService.getStorageKey(tenantId);
       const serialized = JSON.stringify(state);
 
       // Staging write first to prevent data corruption during interrupted writes
       try {
         localStorage.setItem(STAGING_KEY, serialized);
-        localStorage.setItem(STORAGE_KEY, serialized);
+        localStorage.setItem(key, serialized);
         localStorage.removeItem(STAGING_KEY);
         return { success: true };
       } catch (domErr: any) {
@@ -131,7 +137,8 @@ export class StorageService {
     action: AuditLogEntry['action'],
     entityType: AuditLogEntry['entityType'],
     entityId: string,
-    summary: string
+    summary: string,
+    tenantId = 'default'
   ): ArtistWorkspaceState {
     const entry: AuditLogEntry = {
       id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
@@ -145,7 +152,7 @@ export class StorageService {
 
     const nextLogs = [entry, ...state.auditLogs].slice(0, 100); // Keep last 100 entries
     const updated = { ...state, auditLogs: nextLogs };
-    StorageService.saveWorkspace(updated);
+    StorageService.saveWorkspace(updated, tenantId);
     return updated;
   }
 
@@ -258,9 +265,10 @@ export class StorageService {
   /**
    * Completely erase workspace (Right to Erasure compliance)
    */
-  static clearWorkspace(): void {
+  static clearWorkspace(tenantId = 'default'): void {
     if (typeof localStorage !== 'undefined') {
-      localStorage.removeItem(STORAGE_KEY);
+      const key = StorageService.getStorageKey(tenantId);
+      localStorage.removeItem(key);
       localStorage.removeItem(STAGING_KEY);
     }
   }

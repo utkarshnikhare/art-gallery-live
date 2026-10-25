@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArtistWorkspaceState, WorkspaceModuleId } from '../../types';
+import { summarizeMultiCurrency } from '../../utils/currencyService';
 
 interface DashboardViewProps {
   state: ArtistWorkspaceState;
@@ -23,25 +24,44 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const soldArtworks = state.inventory.filter((a) => a.availability === 'sold').length;
   const onExhibitionCount = state.inventory.filter((a) => a.availability === 'on-exhibition').length;
   
-  // Available Inventory Valuation (sum of list prices of available works - UNREALIZED ESTIMATE)
-  const inventoryValuation = state.inventory
+  // Available Inventory Valuation (sum of list prices with FX conversion if multi-currency)
+  const availableInventoryEntries = state.inventory
     .filter((a) => a.availability === 'available')
-    .reduce((sum, a) => sum + (a.listPrice || 0), 0);
+    .map((a) => ({ amount: a.listPrice || 0, currency: a.currency || currency }));
+
+  const inventoryFxSummary = summarizeMultiCurrency(
+    availableInventoryEntries,
+    currency,
+    state.profile.exchangeRates
+  );
+  const inventoryValuation = inventoryFxSummary.consolidatedBaseTotal;
 
   // 2. Sales & Revenue Metrics (derived strictly from confirmed, non-refunded transactions)
   const nonRefundedSales = state.sales.filter((s) => s.paymentStatus !== 'Refunded');
   const totalSalesCount = nonRefundedSales.length;
-  const grossRevenue = nonRefundedSales.reduce((sum, s) => sum + (s.grossAmount || 0), 0);
-  const totalCommissionsPaid = nonRefundedSales.reduce((sum, s) => sum + (s.galleryCommissionAmount || 0), 0);
-  const netProceeds = nonRefundedSales.reduce((sum, s) => sum + (s.netProceeds || 0), 0);
+
+  const grossSalesEntries = nonRefundedSales.map((s) => ({ amount: s.grossAmount || 0, currency: s.currency || currency }));
+  const grossFxSummary = summarizeMultiCurrency(grossSalesEntries, currency, state.profile.exchangeRates);
+  const grossRevenue = grossFxSummary.consolidatedBaseTotal;
+
+  const netSalesEntries = nonRefundedSales.map((s) => ({ amount: s.netProceeds || 0, currency: s.currency || currency }));
+  const netFxSummary = summarizeMultiCurrency(netSalesEntries, currency, state.profile.exchangeRates);
+  const netProceeds = netFxSummary.consolidatedBaseTotal;
+
+  const commissionEntries = nonRefundedSales.map((s) => ({ amount: s.galleryCommissionAmount || 0, currency: s.currency || currency }));
+  const commissionFxSummary = summarizeMultiCurrency(commissionEntries, currency, state.profile.exchangeRates);
+  const totalCommissionsPaid = commissionFxSummary.consolidatedBaseTotal;
+
   const averageSalePrice = totalSalesCount > 0 ? Math.round(grossRevenue / totalSalesCount) : 0;
   
-  // Outstanding accounts receivable (pending payments and unpaid partial balances)
-  const pendingPayments = state.sales.reduce((sum, s) => {
-    if (s.paymentStatus === 'Pending') return sum + (s.netProceeds || 0);
-    if (s.paymentStatus === 'Partially Paid') return sum + (s.balanceDue || 0);
-    return sum;
-  }, 0);
+  // Outstanding accounts receivable (pending payments and unpaid partial balances with FX)
+  const pendingEntries = state.sales.map((s) => {
+    let pendingVal = 0;
+    if (s.paymentStatus === 'Pending') pendingVal = s.netProceeds || 0;
+    if (s.paymentStatus === 'Partially Paid') pendingVal = s.balanceDue || 0;
+    return { amount: pendingVal, currency: s.currency || currency };
+  });
+  const pendingPayments = summarizeMultiCurrency(pendingEntries, currency, state.profile.exchangeRates).consolidatedBaseTotal;
 
   // 3. Exhibition Cost & Profitability Metrics
   const totalExhibitionExpenses = state.exhibitions.reduce((sum, e) => sum + (e.totalExpenses || 0), 0);
@@ -141,6 +161,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <span>List price of {availableArtworks} available works</span>
             <span>•</span>
             <span>{totalArtworks} total in catalog</span>
+            {inventoryFxSummary.hasMultipleCurrencies && (
+              <span className="fx-normalized-text"> (FX Normalized to {currency})</span>
+            )}
           </div>
         </div>
 

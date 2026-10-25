@@ -475,6 +475,9 @@ export interface DigitalCertificate {
   issueDate: string;
   issuer: string;
   sha256Fingerprint: string; // Cryptographic SHA-256 hash of title, artist, year, medium, dimensions
+  ecdsaSignature?: string; // Asymmetric digital signature over SHA-256 hash
+  publicKeyJwk?: any; // Public key JWK for third-party verification
+  proofToken?: string; // Self-contained portable URL proof token
   verificationUrl: string;
   status: 'valid' | 'revoked' | 'superseded';
   revokedAt?: string;
@@ -534,11 +537,29 @@ export interface ArtistProfileSettings {
   vaultPasscodeHash?: string;
   vaultPassphraseSalt?: string;
   encryptionAtRest?: boolean;
+  sessionVaultLock?: boolean; // When true, workspace locks upon reload or inactivity
+  exchangeRates?: Record<string, number>; // Currency conversion rates relative to USD (USD=1.0)
+  studioPublicKeyJwk?: any;
+  studioPrivateKeyJwk?: any;
   supabaseConfig?: {
     configured: boolean;
     url?: string;
     note: string;
   };
+}
+
+export interface WorkspaceTenant {
+  id: string; // e.g. 'ws-primary', 'ws-prints'
+  name: string; // e.g. 'Fine Art Originals', 'Limited Editions Studio'
+  createdAt: string;
+}
+
+export interface ReportEventChangePayload {
+  eventId: string;
+  eventTitle: string;
+  reportedChange: 'cancelled' | 'postponed' | 'dates-changed' | 'fee-changed' | 'sold-out';
+  details: string;
+  submittedAt: string;
 }
 
 export interface EncryptedStoragePayload {

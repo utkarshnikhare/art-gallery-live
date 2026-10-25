@@ -115,6 +115,11 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onOpenModal }) => {
           {event.verifiedFields.map(field => (
             <span key={field} className="field-tag">✓ {field}</span>
           ))}
+          {event.lastCheckedAt && (
+            <span className="field-tag freshness-tag" title="Last checked timestamp">
+              {new Date(event.lastCheckedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+            </span>
+          )}
         </div>
       )}
 

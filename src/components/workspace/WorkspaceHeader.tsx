@@ -1,5 +1,5 @@
 import React from 'react';
-import { WorkspaceModuleId, ArtistProfileSettings } from '../../types';
+import { WorkspaceModuleId, ArtistProfileSettings, WorkspaceTenant } from '../../types';
 
 interface WorkspaceHeaderProps {
   activeModule: WorkspaceModuleId;
@@ -15,6 +15,10 @@ interface WorkspaceHeaderProps {
   };
   onOpenVerifyModal: () => void;
   onSwitchToDiscovery: () => void;
+  onLockVault?: () => void;
+  tenants?: WorkspaceTenant[];
+  activeTenantId?: string;
+  onSwitchTenant?: (tenantId: string) => void;
 }
 
 export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
@@ -24,6 +28,10 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
   counts,
   onOpenVerifyModal,
   onSwitchToDiscovery,
+  onLockVault,
+  tenants = [{ id: 'default', name: 'Fine Art Studio', createdAt: '' }],
+  activeTenantId = 'default',
+  onSwitchTenant,
 }) => {
   const navItems: { id: WorkspaceModuleId; label: string; icon: string; count?: number }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
@@ -53,6 +61,22 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
         </div>
 
         <div className="workspace-top-actions">
+          {tenants.length > 1 && onSwitchTenant && (
+            <div className="tenant-selector-wrap">
+              <label htmlFor="tenant-select" className="sr-only">Switch Studio Workspace</label>
+              <select
+                id="tenant-select"
+                value={activeTenantId}
+                onChange={(e) => onSwitchTenant(e.target.value)}
+                className="tenant-select"
+              >
+                {tenants.map((t) => (
+                  <option key={t.id} value={t.id}>🏛️ {t.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <button
             type="button"
             className="btn btn-outline btn-sm"
@@ -70,6 +94,18 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
           >
             🏛️ Public Discovery Directory
           </button>
+
+          {onLockVault && (
+            <button
+              type="button"
+              className="btn btn-outline btn-sm btn-lock-vault"
+              onClick={onLockVault}
+              title="Lock private studio vault"
+              aria-label="Lock private studio vault"
+            >
+              🔒 Lock Vault
+            </button>
+          )}
 
           <div className="artist-profile-chip" title={`Base Currency: ${profile.baseCurrency} | Studio: ${profile.studioName || 'Private'}`}>
             <span className="profile-dot" aria-hidden="true"></span>

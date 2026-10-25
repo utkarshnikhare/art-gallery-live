@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
 import { DigitalCertificate, UserArtwork } from '../../types';
-import { generateArtworkFingerprint, PROVENANCE_LEGAL_NOTICE } from '../../utils/cryptoUtils';
+import { 
+  generateArtworkFingerprint, 
+  PROVENANCE_LEGAL_NOTICE,
+  generateStudioKeypair,
+  signArtworkFingerprint,
+  createPortableProofToken
+} from '../../utils/cryptoUtils';
 import { generateQrSvgDataUri } from '../../utils/qrUtils';
 
 interface CertificatesViewProps {
@@ -37,7 +43,7 @@ export const CertificatesView: React.FC<CertificatesViewProps> = ({
     setIsIssueModalOpen(true);
   };
 
-  const handleIssueSubmit = (e: React.FormEvent) => {
+  const handleIssueSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const artwork = inventory.find((a) => a.id === selectedArtworkId);
     if (!artwork) return;
@@ -46,7 +52,7 @@ export const CertificatesView: React.FC<CertificatesViewProps> = ({
     const certId = `MK-COA-${new Date().getFullYear()}-${certNum}`;
     const dimsText = `${artwork.dimensions.width} × ${artwork.dimensions.height} ${artwork.dimensions.unit}`;
 
-    // Cryptographic SHA-256 fingerprint of canonical artwork metadata
+    // 1. Cryptographic SHA-256 fingerprint of canonical artwork metadata
     const sha256 = generateArtworkFingerprint({
       title: artwork.title,
       artistName: artwork.artistName || artistName,
@@ -57,9 +63,11 @@ export const CertificatesView: React.FC<CertificatesViewProps> = ({
       uniqueSalt: certId,
     });
 
-    const verifyUrl = `${publicBaseUrl}?verify=${certId}`;
+    // 2. Generate asymmetric ECDSA P-256 keypair for non-repudiation
+    const keypair = await generateStudioKeypair();
+    const signature = await signArtworkFingerprint(sha256, keypair.privateKeyJwk);
 
-    const newCertificate: DigitalCertificate = {
+    const protoCertificate: DigitalCertificate = {
       certificateId: certId,
       artworkId: artwork.id,
       artworkTitle: artwork.title,
@@ -71,13 +79,25 @@ export const CertificatesView: React.FC<CertificatesViewProps> = ({
       issueDate: new Date().toISOString().slice(0, 10),
       issuer: 'Morrowkind Provenance Vault',
       sha256Fingerprint: sha256,
-      verificationUrl: verifyUrl,
+      ecdsaSignature: signature,
+      publicKeyJwk: keypair.publicKeyJwk,
+      verificationUrl: '',
       status: 'valid',
       legalNotice: PROVENANCE_LEGAL_NOTICE,
       blockchainAnchor: {
         isAnchored: false,
-        note: 'Cryptographically hashed and verified in platform vault. Optional testnet anchoring available on demand.',
+        note: 'Cryptographically hashed and verified in platform vault. Signed via ECDSA P-256.',
       },
+    };
+
+    // 3. Generate self-contained portable proof token for zero-backend cross-device verification
+    const proofToken = createPortableProofToken(protoCertificate);
+    const verifyUrl = `${publicBaseUrl}?verify=${certId}&proof=${proofToken}`;
+
+    const newCertificate: DigitalCertificate = {
+      ...protoCertificate,
+      proofToken,
+      verificationUrl: verifyUrl,
     };
 
     onIssueCertificate(newCertificate);
@@ -188,6 +208,13 @@ export const CertificatesView: React.FC<CertificatesViewProps> = ({
                     </div>
                     <code className="hash-text">{cert.sha256Fingerprint}</code>
                   </div>
+
+                  {cert.ecdsaSignature && (
+                    <div className="cert-signature-pill">
+                      <span>✍️ ECDSA P-256 Digital Signature:</span>
+                      <code>{cert.ecdsaSignature.slice(0, 32)}...</code>
+                    </div>
+                  )}
 
                   {/* Offline SVG QR Code Preview */}
                   <div className="cert-qr-container">

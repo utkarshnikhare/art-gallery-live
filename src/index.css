@@ -3293,3 +3293,151 @@ body {
   line-height: 1.4;
 }
 
+/* Vault Lock Screen Styles */
+.vault-lock-screen {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 55vh;
+  padding: 32px 16px;
+}
+
+.vault-lock-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.08);
+  border-radius: var(--radius-md);
+  padding: 36px 28px;
+  max-width: 440px;
+  width: 100%;
+  text-align: center;
+}
+
+.vault-lock-icon {
+  font-size: 2.8rem;
+  margin-bottom: 12px;
+}
+
+.vault-lock-card h2 {
+  font-family: var(--font-serif);
+  font-size: 1.4rem;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+}
+
+.vault-lock-card p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin-bottom: 20px;
+}
+
+.vault-lock-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.vault-lock-input {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-warm);
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.btn-lock-vault {
+  background: rgba(197, 160, 89, 0.1);
+  border-color: rgba(197, 160, 89, 0.4);
+  color: var(--gold-dark);
+}
+
+.btn-lock-vault:hover {
+  background: rgba(197, 160, 89, 0.2);
+}
+
+/* Tenant Selector Styles */
+.tenant-selector-wrap {
+  display: flex;
+  align-items: center;
+}
+
+.tenant-select {
+  background: var(--bg-warm);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-weight: 500;
+}
+
+/* Verification Badges */
+.verify-badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.portable-proof-badge {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  font-size: 0.72rem;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.ecdsa-verified-badge {
+  background: #fdf2f8;
+  border: 1px solid #fbcfe8;
+  color: #9d174d;
+  font-size: 0.72rem;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.cert-signature-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--bg-warm);
+  border: 1px solid var(--border-color);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.72rem;
+  margin-top: 6px;
+  color: var(--text-secondary);
+}
+
+.cert-signature-pill code {
+  font-family: monospace;
+  color: var(--gold-dark);
+}
+
+.signature-code {
+  color: #9d174d !important;
+  font-size: 0.75rem !important;
+}
+
+.fx-normalized-text {
+  font-size: 0.72rem;
+  color: var(--gold-dark);
+  font-weight: 500;
+}
+
+.freshness-tag {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #475569;
+}
+
+

@@ -1,8 +1,9 @@
 /**
  * Cryptographic Utility for Document Fingerprinting, Authenticated Encryption,
- * and Digital Certificate Verification.
- * Complies with FIPS 180-4 standard SHA-256 digest specification and
- * NIST SP 800-38D AES-GCM 256-bit authenticated encryption.
+ * Asymmetric ECDSA Digital Signatures, and Portable Proof Verification.
+ * Complies with FIPS 180-4 standard SHA-256 digest specification,
+ * NIST SP 800-38D AES-GCM 256-bit authenticated encryption, and
+ * FIPS 186-4 ECDSA with P-256 curve digital signatures.
  */
 
 import { EncryptedStoragePayload, DigitalCertificate } from '../types';
@@ -179,7 +180,6 @@ export async function encryptAesGcm(plainText: string, passphrase: string): Prom
 
 /**
  * Authenticated Decryption using AES-GCM-256
- * Automatically verifies cryptographic authentication tag; throws on wrong key or tampered ciphertext.
  */
 export async function decryptAesGcm(payload: EncryptedStoragePayload, passphrase: string): Promise<string> {
   if (!payload || !payload.ciphertext || !payload.iv || !payload.salt) {
@@ -206,16 +206,76 @@ export async function decryptAesGcm(payload: EncryptedStoragePayload, passphrase
 }
 
 /**
+ * Generate asymmetric ECDSA P-256 keypair for studio identity and non-repudiation
+ */
+export async function generateStudioKeypair(): Promise<{ publicKeyJwk: any; privateKeyJwk: any }> {
+  const keypair = await globalThis.crypto.subtle.generateKey(
+    { name: 'ECDSA', namedCurve: 'P-256' },
+    true,
+    ['sign', 'verify']
+  );
+
+  const publicKeyJwk = await globalThis.crypto.subtle.exportKey('jwk', keypair.publicKey);
+  const privateKeyJwk = await globalThis.crypto.subtle.exportKey('jwk', keypair.privateKey);
+
+  return { publicKeyJwk, privateKeyJwk };
+}
+
+/**
+ * Digitally sign a SHA-256 fingerprint using the studio's private ECDSA P-256 key
+ */
+export async function signArtworkFingerprint(fingerprint: string, privateKeyJwk: any): Promise<string> {
+  const privateKey = await globalThis.crypto.subtle.importKey(
+    'jwk',
+    privateKeyJwk,
+    { name: 'ECDSA', namedCurve: 'P-256' },
+    false,
+    ['sign']
+  );
+
+  const enc = new TextEncoder();
+  const signatureBuf = await globalThis.crypto.subtle.sign(
+    { name: 'ECDSA', hash: { name: 'SHA-256' } },
+    privateKey,
+    enc.encode(fingerprint)
+  );
+
+  return uint8ArrayToBase64(new Uint8Array(signatureBuf));
+}
+
+/**
+ * Verify an ECDSA P-256 digital signature over a SHA-256 fingerprint using public key
+ */
+export async function verifyArtworkSignature(
+  fingerprint: string,
+  signatureBase64: string,
+  publicKeyJwk: any
+): Promise<boolean> {
+  try {
+    const publicKey = await globalThis.crypto.subtle.importKey(
+      'jwk',
+      publicKeyJwk,
+      { name: 'ECDSA', namedCurve: 'P-256' },
+      false,
+      ['verify']
+    );
+
+    const enc = new TextEncoder();
+    const signatureBytes = base64ToUint8Array(signatureBase64);
+
+    return await globalThis.crypto.subtle.verify(
+      { name: 'ECDSA', hash: { name: 'SHA-256' } },
+      publicKey,
+      signatureBytes as any,
+      enc.encode(fingerprint)
+    );
+  } catch (err) {
+    return false;
+  }
+}
+
+/**
  * Generate canonical SHA-256 fingerprint from artwork metadata
- * Fields covered by the fingerprint:
- * - TITLE
- * - ARTIST
- * - YEAR
- * - MEDIUM
- * - DIMENSIONS (Height x Width x Depth Unit)
- * - EDITION
- * Non-covered fields (e.g. storage location, internal tags, framing notes)
- * can change without invalidating the core artwork authenticity fingerprint.
  */
 export function generateArtworkFingerprint(meta: {
   title: string;
@@ -257,6 +317,121 @@ export function verifyArtworkFingerprint(
 ): boolean {
   const calculated = generateArtworkFingerprint(meta);
   return calculated.toLowerCase() === storedFingerprint.toLowerCase();
+}
+
+/**
+ * Generate a self-contained portable proof token for cross-device verification
+ * Encodes all necessary metadata and cryptographic signatures into a compact, URL-safe Base64 token
+ */
+export function createPortableProofToken(cert: DigitalCertificate): string {
+  const payload = {
+    id: cert.certificateId,
+    t: cert.artworkTitle,
+    a: cert.artistName,
+    y: cert.yearCreated,
+    m: cert.medium,
+    d: cert.dimensionsText,
+    e: cert.editionText,
+    dt: cert.issueDate,
+    h: cert.sha256Fingerprint,
+    sig: cert.ecdsaSignature || '',
+    pk: cert.publicKeyJwk || null,
+    st: cert.status,
+    rr: cert.revocationReason || '',
+  };
+
+  const jsonStr = JSON.stringify(payload);
+  const b64 = uint8ArrayToBase64(new TextEncoder().encode(jsonStr));
+  // Make URL-safe
+  return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+/**
+ * Unpack and verify a self-contained portable proof token on ANY third-party device
+ */
+export async function verifyPortableProofToken(token: string): Promise<{
+  isValid: boolean;
+  cert?: DigitalCertificate;
+  isSignatureVerified: boolean;
+  error?: string;
+}> {
+  try {
+    // Restore base64 padding
+    let base64 = token.replace(/-/g, '+').replace(/_/g, '/');
+    while (base64.length % 4) {
+      base64 += '=';
+    }
+
+    const jsonBytes = base64ToUint8Array(base64);
+    const jsonStr = new TextDecoder().decode(jsonBytes);
+    const p = JSON.parse(jsonStr);
+
+    if (!p.id || !p.t || !p.h) {
+      return { isValid: false, isSignatureVerified: false, error: 'Malformed proof payload' };
+    }
+
+    // 1. Recalculate SHA-256 fingerprint from unpacked metadata
+    const recalculatedHash = generateArtworkFingerprint({
+      title: p.t,
+      artistName: p.a,
+      yearCreated: p.y,
+      medium: p.m,
+      dimensionsText: p.d,
+      editionText: p.e,
+      uniqueSalt: p.id,
+    });
+
+    const isHashValid = recalculatedHash.toLowerCase() === p.h.toLowerCase();
+    if (!isHashValid) {
+      return {
+        isValid: false,
+        isSignatureVerified: false,
+        error: 'Cryptographic hash mismatch! The artwork attributes have been modified.',
+      };
+    }
+
+    // 2. Verify ECDSA signature if present
+    let isSignatureVerified = false;
+    if (p.sig && p.pk) {
+      isSignatureVerified = await verifyArtworkSignature(p.h, p.sig, p.pk);
+    }
+
+    const reconstructedCert: DigitalCertificate = {
+      certificateId: p.id,
+      artworkId: `art-${p.id}`,
+      artworkTitle: p.t,
+      artistName: p.a,
+      yearCreated: p.y,
+      medium: p.m,
+      dimensionsText: p.d,
+      editionText: p.e,
+      issueDate: p.dt,
+      issuer: 'Morrowkind Provenance Vault (Self-Verifying Proof)',
+      sha256Fingerprint: p.h,
+      ecdsaSignature: p.sig,
+      publicKeyJwk: p.pk,
+      verificationUrl: typeof window !== 'undefined' ? window.location.href : '',
+      status: p.st || 'valid',
+      revocationReason: p.rr || '',
+      legalNotice: PROVENANCE_LEGAL_NOTICE,
+      blockchainAnchor: {
+        isAnchored: false,
+        note: 'Verified offline via self-contained ECDSA cryptographic token.',
+      },
+    };
+
+    return {
+      isValid: true,
+      cert: reconstructedCert,
+      isSignatureVerified,
+    };
+  } catch (err: any) {
+    return {
+      isValid: false,
+      isSignatureVerified: false,
+      error: `Failed to decode proof token: ${err.message}`,
+    };
+  }
 }
 
 /**

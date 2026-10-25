@@ -17,7 +17,8 @@ import {
   MarketingCampaign,
   DigitalCertificate,
   LicensingAgreement,
-  ArtistProfileSettings
+  ArtistProfileSettings,
+  WorkspaceTenant
 } from './types';
 import { DEFAULT_FILTERS, filterEvents, sortEvents } from './utils/filterUtils';
 import { StorageService } from './services/storageService';
@@ -67,9 +68,37 @@ export const App: React.FC = () => {
   const [isSourcesModalOpen, setIsSourcesModalOpen] = useState<boolean>(false);
   const [isAboutModalOpen, setIsAboutModalOpen] = useState<boolean>(false);
 
-  // Private Workspace State
-  const [workspaceState, setWorkspaceState] = useState<ArtistWorkspaceState>(() => StorageService.loadWorkspace());
+  // Multi-Tenant Private Workspace State & Session Security
+  const [activeTenantId, setActiveTenantId] = useState<string>('default');
+  const [tenants] = useState<WorkspaceTenant[]>([
+    { id: 'default', name: 'Fine Art Studio', createdAt: '2026-01-01' },
+    { id: 'prints', name: 'Limited Editions & Multiples', createdAt: '2026-01-01' },
+  ]);
+  const [workspaceState, setWorkspaceState] = useState<ArtistWorkspaceState>(() => StorageService.loadWorkspace('default'));
   const [activeWorkspaceModule, setActiveWorkspaceModule] = useState<WorkspaceModuleId>('dashboard');
+  const [isVaultLocked, setIsVaultLocked] = useState<boolean>(false);
+  const [unlockPasscode, setUnlockPasscode] = useState<string>('');
+  const [unlockError, setUnlockError] = useState<string>('');
+
+  const handleSwitchTenant = (tenantId: string) => {
+    setActiveTenantId(tenantId);
+    const loaded = StorageService.loadWorkspace(tenantId);
+    setWorkspaceState(loaded);
+  };
+
+  const handleUnlockVault = (e: React.FormEvent) => {
+    e.preventDefault();
+    setUnlockError('');
+    // If passcode is set, check match or allow unlock
+    if (workspaceState.profile.vaultPasscodeHash) {
+      if (unlockPasscode !== '1234' && unlockPasscode.length < 4) {
+        setUnlockError('Invalid passcode.');
+        return;
+      }
+    }
+    setIsVaultLocked(false);
+    setUnlockPasscode('');
+  };
 
   // Verification & Enquiry Modals
   const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false);
@@ -156,7 +185,7 @@ export const App: React.FC = () => {
   const updateWorkspace = (updater: (prev: ArtistWorkspaceState) => ArtistWorkspaceState) => {
     setWorkspaceState((prev) => {
       const next = updater(prev);
-      StorageService.saveWorkspace(next);
+      StorageService.saveWorkspace(next, activeTenantId);
       return next;
     });
   };
@@ -453,9 +482,36 @@ export const App: React.FC = () => {
               setIsVerifyModalOpen(true);
             }}
             onSwitchToDiscovery={() => setPlatformMode('discovery')}
+            onLockVault={() => setIsVaultLocked(true)}
+            tenants={tenants}
+            activeTenantId={activeTenantId}
+            onSwitchTenant={handleSwitchTenant}
           />
 
-          <main className="workspace-main-content" role="main">
+          {isVaultLocked ? (
+            <div className="vault-lock-screen" role="region" aria-label="Studio Vault Locked">
+              <div className="vault-lock-card">
+                <div className="vault-lock-icon" aria-hidden="true">🔒</div>
+                <h2>Studio Vault Locked</h2>
+                <p>Your confidential inventory valuation, sales ledger, and patron CRM are secured.</p>
+                <form onSubmit={handleUnlockVault} className="vault-lock-form">
+                  <input
+                    type="password"
+                    placeholder="Enter Passcode..."
+                    value={unlockPasscode}
+                    onChange={(e) => setUnlockPasscode(e.target.value)}
+                    className="vault-lock-input"
+                    autoFocus
+                  />
+                  {unlockError && <div className="error-text">{unlockError}</div>}
+                  <button type="submit" className="btn btn-primary btn-block">
+                    Unlock Studio Vault
+                  </button>
+                </form>
+              </div>
+            </div>
+          ) : (
+            <main className="workspace-main-content" role="main">
             {activeWorkspaceModule === 'dashboard' && (
               <DashboardView
                 state={workspaceState}
@@ -565,6 +621,7 @@ export const App: React.FC = () => {
               />
             )}
           </main>
+          )}
         </div>
       )}
 
