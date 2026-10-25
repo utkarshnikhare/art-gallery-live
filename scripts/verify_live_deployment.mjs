@@ -104,9 +104,9 @@ async function main() {
     await new Promise(r => setTimeout(r, 200));
 
     // 9. Test Public COA Verification Modal
-    await page.click('.btn-verify-coa');
+    await page.click('.header-actions button:first-child');
     await new Promise(r => setTimeout(r, 300));
-    const isCoaModalVisible = await page.$eval('.verification-modal', el => el !== null);
+    const isCoaModalVisible = await page.$eval('.verify-modal-body', el => el !== null);
     console.log(`[Live Verify] Public Certificate of Authenticity modal opened: ${isCoaModalVisible}`);
     await page.click('.modal-close-btn');
     await new Promise(r => setTimeout(r, 200));

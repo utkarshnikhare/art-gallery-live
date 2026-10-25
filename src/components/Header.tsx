@@ -89,7 +89,7 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="header-actions">
             <button
               type="button"
-              className="btn btn-outline btn-sm"
+              className="btn btn-outline btn-sm btn-verify-coa"
               onClick={onOpenVerify}
               aria-label="Verify Certificate of Authenticity"
             >
