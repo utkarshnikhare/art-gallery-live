@@ -101,6 +101,10 @@ export const App: React.FC = () => {
 
     // If storage is encrypted at rest, decrypt ciphertext with passphrase
     if (StorageService.isStorageEncryptedAtRest(activeTenantId)) {
+      if (!unlockPasscode) {
+        setUnlockError('Master passphrase cannot be blank.');
+        return;
+      }
       const res = await StorageService.loadWorkspaceEncrypted(unlockPasscode, activeTenantId);
       if (res.success && res.state) {
         setWorkspaceState(res.state);
@@ -113,14 +117,17 @@ export const App: React.FC = () => {
       }
     }
 
-    // Unencrypted mode: UI shoulder-surfing lock
-    const expectedPasscode = workspaceState.profile.vaultPasscodeHash || '1234';
-    if (unlockPasscode !== expectedPasscode && unlockPasscode !== '1234') {
-      setUnlockError('Invalid studio passcode (Default: 1234).');
-      return;
+    // Unencrypted mode: UI visual privacy curtain (shoulder-surfing guard)
+    const configuredPasscode = workspaceState.profile.vaultPasscodeHash;
+    const verification = StorageService.verifyVaultPrivacyPasscode(unlockPasscode, configuredPasscode);
+
+    if (verification.valid) {
+      setIsVaultLocked(false);
+      setUnlockPasscode('');
+      setUnlockError('');
+    } else {
+      setUnlockError(verification.error || 'Access denied.');
     }
-    setIsVaultLocked(false);
-    setUnlockPasscode('');
   };
 
   // Verification & Enquiry Modals
@@ -515,32 +522,95 @@ export const App: React.FC = () => {
             <div className="vault-lock-screen" role="region" aria-label="Studio Vault Locked">
               <div className="vault-lock-card">
                 <div className="vault-lock-icon" aria-hidden="true">🔒</div>
-                <h2>{isEncryptedAtRest ? 'AES-256 Encrypted Vault' : 'Studio Vault Locked'}</h2>
+                <h2>{isEncryptedAtRest ? 'AES-256 Encrypted Vault' : 'Studio Privacy Screen'}</h2>
                 <p>
                   {isEncryptedAtRest
                     ? 'Storage ciphertext is cryptographically encrypted at rest with AES-GCM-256. Enter your master passphrase to derive the decryption key.'
-                    : 'Workspace display is locked against shoulder-surfing in the studio.'}
+                    : 'Workspace display is obscured to prevent shoulder-surfing observation in the physical studio.'}
                 </p>
                 
                 {!isEncryptedAtRest && (
                   <div className="vault-honest-notice">
-                    🛡️ <strong>Security Disclosure:</strong> Local storage is in standard mode. This lock guards your display from casual observation. For full cryptographic encryption at rest, enable AES-256 encryption in Settings or export an encrypted backup.
+                    🛡️ <strong>Visual Screen Lock:</strong> Local storage is in standard mode. This curtain shields your screen from casual visitors. For true cryptographic encryption at rest, use the AES-256 storage migration in Vault Settings.
+                  </div>
+                )}
+
+                {!isEncryptedAtRest && !workspaceState.profile.vaultPasscodeHash && (
+                  <div className="alert-card warning-accent" style={{ margin: '12px 0', textAlign: 'left', fontSize: '0.8125rem' }}>
+                    <strong>⚠️ Passcode Unconfigured:</strong> No privacy PIN has been set for this studio. Universal default passcodes are disabled to prevent false security assumptions. You can set a passcode below, or dismiss this privacy curtain to return to the workspace.
                   </div>
                 )}
 
                 <form onSubmit={handleUnlockVault} className="vault-lock-form">
                   <input
                     type="password"
-                    placeholder={isEncryptedAtRest ? "Enter Master Vault Passphrase..." : "Enter Studio Passcode..."}
+                    placeholder={
+                      isEncryptedAtRest
+                        ? "Enter Master Vault Passphrase..."
+                        : (workspaceState.profile.vaultPasscodeHash ? "Enter Studio Passcode..." : "Enter New Studio Passcode (min 4 chars)...")
+                    }
                     value={unlockPasscode}
                     onChange={(e) => setUnlockPasscode(e.target.value)}
                     className="vault-lock-input"
                     autoFocus
                   />
                   {unlockError && <div className="error-text">{unlockError}</div>}
-                  <button type="submit" className="btn btn-primary btn-block">
-                    {isEncryptedAtRest ? 'Decrypt & Unlock Workspace' : 'Unlock Studio Vault'}
-                  </button>
+                  
+                  {isEncryptedAtRest ? (
+                    <button type="submit" className="btn btn-primary btn-block">
+                      Decrypt & Unlock Workspace
+                    </button>
+                  ) : workspaceState.profile.vaultPasscodeHash ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
+                      <button type="submit" className="btn btn-primary btn-block">
+                        Unlock Studio Display
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-outline btn-sm btn-block"
+                        onClick={() => {
+                          if (window.confirm('Reset the studio privacy screen passcode? Your artworks and studio data will remain completely intact.')) {
+                            handleUpdateProfile({ ...workspaceState.profile, vaultPasscodeHash: undefined });
+                            setIsVaultLocked(false);
+                            setUnlockPasscode('');
+                            setUnlockError('');
+                          }
+                        }}
+                      >
+                        Reset Privacy Passcode
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-block"
+                        onClick={() => {
+                          if (!unlockPasscode || unlockPasscode.trim().length < 4) {
+                            setUnlockError('Please enter at least 4 characters to configure your studio privacy passcode.');
+                            return;
+                          }
+                          handleUpdateProfile({ ...workspaceState.profile, vaultPasscodeHash: unlockPasscode.trim() });
+                          setIsVaultLocked(false);
+                          setUnlockPasscode('');
+                          setUnlockError('');
+                        }}
+                      >
+                        Save Passcode & Unlock
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-outline btn-block"
+                        onClick={() => {
+                          setIsVaultLocked(false);
+                          setUnlockPasscode('');
+                          setUnlockError('');
+                        }}
+                      >
+                        Dismiss Privacy Curtain (Unconfigured)
+                      </button>
+                    </div>
+                  )}
                 </form>
               </div>
             </div>

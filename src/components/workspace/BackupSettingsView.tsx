@@ -293,6 +293,25 @@ export const BackupSettingsView: React.FC<BackupSettingsViewProps> = ({
               />
             </div>
 
+            <div className="panel-divider" style={{ margin: '16px 0' }}></div>
+
+            <div className="form-field">
+              <label htmlFor="set-passcode" style={{ fontWeight: 600 }}>
+                Studio Privacy Passcode (Visual Screen Curtain)
+              </label>
+              <p className="field-hint" style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                PIN or passcode required to unlock the visual privacy screen when 'Lock Vault' is pressed. Visual protection against studio shoulder-surfing. (Leave blank to keep unconfigured).
+              </p>
+              <input
+                id="set-passcode"
+                type="password"
+                placeholder="Set 4+ character privacy PIN (e.g. 5821)"
+                value={profileForm.vaultPasscodeHash || ''}
+                onChange={(e) => setProfileForm({ ...profileForm, vaultPasscodeHash: e.target.value })}
+                autoComplete="new-password"
+              />
+            </div>
+
             <div className="settings-submit-row">
               <button type="submit" className="btn btn-primary">
                 Save Studio Settings

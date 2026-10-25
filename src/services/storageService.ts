@@ -54,9 +54,56 @@ export const EMPTY_WORKSPACE: ArtistWorkspaceState = {
   ],
 };
 
+export interface PrivacyPasscodeVerificationResult {
+  valid: boolean;
+  status: 'MATCH' | 'MISMATCH' | 'BLANK' | 'UNCONFIGURED';
+  error?: string;
+}
+
 export class StorageService {
   static getStorageKey(tenantId = 'default'): string {
     return tenantId === 'default' ? STORAGE_KEY : `morrowkind_workspace_${tenantId}`;
+  }
+
+  /**
+   * Verify studio privacy screen passcode (visual curtain) in standard storage mode.
+   * Universal default passcodes (e.g. '1234') are explicitly rejected.
+   */
+  static verifyVaultPrivacyPasscode(
+    inputPasscode: string | undefined | null,
+    configuredPasscode: string | undefined | null
+  ): PrivacyPasscodeVerificationResult {
+    const trimmedInput = (inputPasscode || '').trim();
+    const trimmedConfigured = (configuredPasscode || '').trim();
+
+    if (!trimmedInput) {
+      return {
+        valid: false,
+        status: 'BLANK',
+        error: 'Passcode cannot be blank. Enter your studio privacy passcode.'
+      };
+    }
+
+    if (!trimmedConfigured) {
+      return {
+        valid: false,
+        status: 'UNCONFIGURED',
+        error: 'Vault privacy passcode is unconfigured. Universal default passcodes (e.g. 1234) are rejected.'
+      };
+    }
+
+    if (trimmedInput !== trimmedConfigured) {
+      return {
+        valid: false,
+        status: 'MISMATCH',
+        error: 'Incorrect studio passcode. Please re-enter the passcode configured in Studio Settings.'
+      };
+    }
+
+    return {
+      valid: true,
+      status: 'MATCH'
+    };
   }
 
   /**

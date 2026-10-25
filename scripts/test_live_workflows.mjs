@@ -147,35 +147,84 @@ async function testAllWorkflows() {
     assertWorkflow('Multi-tenant switcher returned to primary studio partition', defaultVal === 'default');
   }
 
-  // 5. Vault Locking & Passcode Protection
-  console.log('\n5. Testing Vault Shoulder-Surfing Lock...');
+  // 5. Vault Privacy Curtain & Passcode Protection
+  console.log('\n5. Testing Vault Privacy Curtain & Passcode Protection...');
   const lockBtn = await page.$('.btn-lock-vault');
   if (lockBtn) {
     await lockBtn.click();
     await new Promise((r) => setTimeout(r, 250));
     const isLocked = await page.evaluate(() => !!document.querySelector('.vault-lock-screen'));
-    assertWorkflow('Vault Lock Screen engaged on click', isLocked);
+    assertWorkflow('Vault Privacy Screen engaged on click', isLocked);
 
-    // Try incorrect passcode
     await page.waitForSelector('.vault-lock-input', { timeout: 3000 });
-    await page.type('.vault-lock-input', '0000');
-    const unlockBtn = await page.$('.vault-lock-form button[type="submit"]');
-    if (unlockBtn) await unlockBtn.click();
-    await new Promise((r) => setTimeout(r, 250));
+    
+    // Check if unconfigured notice is visible
+    const unconfiguredNotice = await page.evaluate(() => {
+      const card = document.querySelector('.vault-lock-card');
+      return card ? card.textContent.includes('Passcode Unconfigured') : false;
+    });
 
-    const stillLocked = await page.evaluate(() => !!document.querySelector('.vault-lock-screen'));
-    assertWorkflow('Incorrect passcode rejects unlock attempt', stillLocked);
+    if (unconfiguredNotice) {
+      // Configure new passcode 8899
+      await page.click('.vault-lock-input', { clickCount: 3 });
+      await page.keyboard.press('Backspace');
+      await page.type('.vault-lock-input', '8899');
+      
+      const saveAndUnlockBtn = await page.evaluateHandle(() => {
+        const buttons = Array.from(document.querySelectorAll('.vault-lock-card button'));
+        return buttons.find(b => b.textContent.includes('Save Passcode & Unlock'));
+      });
+      if (saveAndUnlockBtn) await saveAndUnlockBtn.click();
+      await new Promise((r) => setTimeout(r, 350));
 
-    // Correct passcode 1234
-    await page.click('.vault-lock-input', { clickCount: 3 });
-    await page.keyboard.press('Backspace');
-    await page.type('.vault-lock-input', '1234');
-    const unlockBtn2 = await page.$('.vault-lock-form button[type="submit"]');
-    if (unlockBtn2) await unlockBtn2.click();
-    await new Promise((r) => setTimeout(r, 350));
+      const isUnlockedAfterConfig = await page.evaluate(() => !document.querySelector('.vault-lock-screen'));
+      assertWorkflow('Configuring custom privacy PIN sets passcode and unlocks studio', isUnlockedAfterConfig);
 
-    const isUnlocked = await page.evaluate(() => !document.querySelector('.vault-lock-screen'));
-    assertWorkflow('Valid passcode restores access to studio workspace', isUnlocked);
+      // Lock again with configured passcode
+      const lockBtn2 = await page.$('.btn-lock-vault');
+      if (lockBtn2) await lockBtn2.click();
+      await new Promise((r) => setTimeout(r, 250));
+
+      // Test blank passcode
+      const unlockSubmit = await page.$('.vault-lock-form button[type="submit"]');
+      if (unlockSubmit) await unlockSubmit.click();
+      await new Promise((r) => setTimeout(r, 200));
+      const blankErrorVisible = await page.evaluate(() => {
+        const err = document.querySelector('.vault-lock-card .error-text');
+        return err ? err.textContent.includes('cannot be blank') : false;
+      });
+      assertWorkflow('Blank passcode rejected with validation error', blankErrorVisible);
+
+      // Test incorrect passcode 0000
+      await page.type('.vault-lock-input', '0000');
+      if (unlockSubmit) await unlockSubmit.click();
+      await new Promise((r) => setTimeout(r, 200));
+      const incorrectErrorVisible = await page.evaluate(() => {
+        const err = document.querySelector('.vault-lock-card .error-text');
+        return err ? err.textContent.includes('Incorrect') : false;
+      });
+      assertWorkflow('Incorrect passcode rejects unlock attempt', incorrectErrorVisible);
+
+      // Test correct passcode 8899
+      await page.click('.vault-lock-input', { clickCount: 3 });
+      await page.keyboard.press('Backspace');
+      await page.type('.vault-lock-input', '8899');
+      if (unlockSubmit) await unlockSubmit.click();
+      await new Promise((r) => setTimeout(r, 350));
+
+      const isUnlockedFinal = await page.evaluate(() => !document.querySelector('.vault-lock-screen'));
+      assertWorkflow('Configured passcode restores access to studio workspace', isUnlockedFinal);
+    } else {
+      // Passcode already configured: test incorrect vs correct
+      const unlockSubmit = await page.$('.vault-lock-form button[type="submit"]');
+      await page.click('.vault-lock-input', { clickCount: 3 });
+      await page.type('.vault-lock-input', '0000');
+      if (unlockSubmit) await unlockSubmit.click();
+      await new Promise((r) => setTimeout(r, 200));
+
+      const stillLocked = await page.evaluate(() => !!document.querySelector('.vault-lock-screen'));
+      assertWorkflow('Incorrect passcode rejects unlock attempt', stillLocked);
+    }
   }
 
   // 6. Public Certificate Verification Modal

@@ -1473,5 +1473,54 @@ it('55. Fixed Benchmark Rates Verification: Rates match stated ECB/RBI reference
   assert.equal(FX_RATES_TO_USD['AUD'], 0.65, 'AUD rate aligns with RBA reference (~0.65 USD)');
 });
 
+// 56. Studio Privacy Passcode Verification: Blank, incorrect, missing/unconfigured, and configured passcodes
+it('56. Studio Privacy Passcode Verification: Blank, incorrect, missing/unconfigured, and configured passcodes', () => {
+  // A. Blank passcode inputs must be rejected
+  const blank1 = StorageService.verifyVaultPrivacyPasscode('', 'customPin99');
+  assert.equal(blank1.valid, false);
+  assert.equal(blank1.status, 'BLANK');
+  assert.ok(blank1.error?.includes('cannot be blank'));
+
+  const blank2 = StorageService.verifyVaultPrivacyPasscode('   ', 'customPin99');
+  assert.equal(blank2.valid, false);
+  assert.equal(blank2.status, 'BLANK');
+
+  const blank3 = StorageService.verifyVaultPrivacyPasscode(null, 'customPin99');
+  assert.equal(blank3.valid, false);
+  assert.equal(blank3.status, 'BLANK');
+
+  // B. Missing / Unconfigured passcode: Universal default passcodes (e.g. 1234) must strictly NOT be accepted
+  const unconfiguredWithDefault = StorageService.verifyVaultPrivacyPasscode('1234', undefined);
+  assert.equal(unconfiguredWithDefault.valid, false);
+  assert.equal(unconfiguredWithDefault.status, 'UNCONFIGURED');
+  assert.ok(unconfiguredWithDefault.error?.includes('unconfigured'));
+
+  const unconfiguredWithEmpty = StorageService.verifyVaultPrivacyPasscode('1234', '');
+  assert.equal(unconfiguredWithEmpty.valid, false);
+  assert.equal(unconfiguredWithEmpty.status, 'UNCONFIGURED');
+
+  const unconfiguredWithRandom = StorageService.verifyVaultPrivacyPasscode('secret99', null);
+  assert.equal(unconfiguredWithRandom.valid, false);
+  assert.equal(unconfiguredWithRandom.status, 'UNCONFIGURED');
+
+  // C. Configured passcode: Incorrect inputs must be rejected
+  const configuredPass = 'studio7788';
+  const wrongInput = StorageService.verifyVaultPrivacyPasscode('wrongPin', configuredPass);
+  assert.equal(wrongInput.valid, false);
+  assert.equal(wrongInput.status, 'MISMATCH');
+  assert.ok(wrongInput.error?.includes('Incorrect'));
+
+  const defaultOnConfigured = StorageService.verifyVaultPrivacyPasscode('1234', configuredPass);
+  assert.equal(defaultOnConfigured.valid, false);
+  assert.equal(defaultOnConfigured.status, 'MISMATCH');
+
+  // D. Configured passcode: Exact match must succeed
+  const correctInput = StorageService.verifyVaultPrivacyPasscode('studio7788', configuredPass);
+  assert.equal(correctInput.valid, true);
+  assert.equal(correctInput.status, 'MATCH');
+  assert.equal(correctInput.error, undefined);
+});
+
+
 console.log(`\nData Integrity & Adversarial Tests: ${passed} PASSED, ${failed} FAILED\n`);
 if (failed > 0) process.exit(1);
