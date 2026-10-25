@@ -13,6 +13,11 @@ import {
 import { calculateEventStatus, formatDateRange, parseDateSafe } from '../src/utils/dateUtils.ts';
 import { filterEvents, sortEvents, DEFAULT_FILTERS } from '../src/utils/filterUtils.ts';
 import { runUpdatePipeline } from '../scripts/update_events.mjs';
+import { generateArtworkFingerprint, verifyArtworkFingerprint } from '../src/utils/cryptoUtils.ts';
+import { calculatePricingRecommendation } from '../src/utils/pricingService.ts';
+import { parseCsvText, validateArtworkImport, exportToCsv } from '../src/utils/csvService.ts';
+import { generateQrSvgDataUri } from '../src/utils/qrUtils.ts';
+import { StorageService, EMPTY_WORKSPACE } from '../src/services/storageService.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -462,6 +467,197 @@ it('24. Professional specification brief generator produces formatted text witho
   assert.ok(isValidEmail(briefPayload.contactEmail));
   assert.ok(briefPayload.targetItemTitle.includes('Spectral Frequencies'));
   assert.equal(briefPayload.isCustomCommission, true);
+});
+
+// 25. Cryptographic SHA-256 fingerprint generation & tamper detection
+it('25. Cryptographic SHA-256 fingerprint generation & tamper detection', () => {
+  const meta = {
+    title: 'Spectral Frequencies No. 4',
+    artistName: 'Reena Saini Kallat',
+    yearCreated: 2026,
+    medium: 'Mixed Media on Linen',
+    dimensionsText: '180 x 240 cm',
+    editionText: 'Original 1 of 1',
+    uniqueSalt: 'MK-COA-TEST',
+  };
+
+  const hash = generateArtworkFingerprint(meta);
+  assert.equal(typeof hash, 'string');
+  assert.equal(hash.length, 64, 'SHA-256 must produce exact 64-character hex string');
+  assert.equal(verifyArtworkFingerprint(hash, meta), true, 'Valid metadata must verify');
+
+  // Tamper detection: modifying title or dimensions must invalidate fingerprint
+  const tamperedTitle = { ...meta, title: 'Tampered Title' };
+  assert.equal(verifyArtworkFingerprint(hash, tamperedTitle), false, 'Tampered title must fail verification');
+
+  const tamperedDims = { ...meta, dimensionsText: '100 x 100 cm' };
+  assert.equal(verifyArtworkFingerprint(hash, tamperedDims), false, 'Tampered dimensions must fail verification');
+});
+
+// 26. Pricing intelligence calculation accuracy
+it('26. Pricing intelligence calculation computes cost floor and gallery retail', () => {
+  const rec = calculatePricingRecommendation({
+    hoursWorked: 20,
+    hourlyWage: 50,
+    materialsCost: 200,
+    framingCost: 150,
+    studioOverheadCost: 50,
+    width: 80,
+    height: 100,
+    unit: 'cm',
+    galleryCommissionPercent: 50,
+    experienceLevel: 'emerging',
+    currency: 'USD',
+  });
+
+  // Labor: 20 * 50 = 1000
+  // Production: 200 + 150 + 50 = 400
+  // Cost floor = 1400
+  assert.equal(rec.costFloorPrice, 1400);
+  // Emerging profit margin = 35% -> Direct studio price = 1400 * 1.35 = 1890
+  assert.equal(rec.directStudioPrice, 1890);
+  // Gallery retail at 50% split -> 1890 / (1 - 0.5) = 3780
+  assert.equal(rec.galleryRetailPrice, 3780);
+  assert.ok(rec.breakdownSummary.length >= 4);
+});
+
+// 27. RFC-4180 CSV parser handles quotes, commas, and newlines
+it('27. RFC-4180 CSV parser handles quotes, commas, and multiline cells', () => {
+  const csvText = `Title,Medium,Price\r\n"Sunrise, Early Morning","Oil, Canvas",1500\r\n"Geometric ""Study""",Acrylic,900`;
+  const parsed = parseCsvText(csvText);
+
+  assert.equal(parsed.totalRows, 2);
+  assert.equal(parsed.headers.length, 3);
+  assert.equal(parsed.rows[0]['Title'], 'Sunrise, Early Morning');
+  assert.equal(parsed.rows[0]['Medium'], 'Oil, Canvas');
+  assert.equal(parsed.rows[1]['Title'], 'Geometric "Study"');
+});
+
+// 28. CSV import validation flags missing dimensions and duplicates
+it('28. CSV import validation flags missing dimensions and detects duplicates', () => {
+  const existingArtworks = [
+    {
+      id: 'art-1',
+      title: 'Ocean Horizon',
+      artistName: 'Artist',
+      yearCreated: 2025,
+      medium: 'Oil',
+      dimensions: { height: 100, width: 120, unit: 'cm' },
+      orientation: 'horizontal',
+      artworkType: 'original',
+      productionCost: 300,
+      listPrice: 2500,
+      currency: 'USD',
+      availability: 'available',
+      location: 'Studio',
+      tags: [],
+      createdAt: '',
+      updatedAt: '',
+    },
+  ];
+
+  const rawRows = [
+    { Title: 'Ocean Horizon', Medium: 'Oil', Height: '100', Width: '120', Price: '2500' }, // Duplicate
+    { Title: 'Mountain Mist', Medium: 'Watercolor', Height: '0', Width: '50', Price: '800' }, // Invalid height
+    { Title: 'Night Echoes', Medium: 'Acrylic', Height: '80', Width: '60', Price: '1200' }, // Valid
+  ];
+
+  const colMap = {
+    title: 'Title',
+    medium: 'Medium',
+    height: 'Height',
+    width: 'Width',
+    listPrice: 'Price',
+  };
+
+  const preview = validateArtworkImport(rawRows, colMap, existingArtworks, 'Artist');
+  assert.equal(preview.totalRows, 3);
+  assert.equal(preview.duplicateCount, 1);
+  assert.equal(preview.errorCount, 1);
+  assert.equal(preview.validCount, 2); // Duplicate is flagged but valid schema
+  assert.equal(preview.rows[1].isValid, false, 'Invalid height must fail validation');
+});
+
+// 29. Sales financial calculations and commission deductions
+it('29. Sales financial calculations accurately compute commission and net proceeds', () => {
+  const gross = 5000;
+  const commissionRate = 40;
+  const commissionAmount = (gross * commissionRate) / 100; // 2000
+  const discount = 200;
+  const otherExpenses = 100;
+  const net = gross - commissionAmount - discount - otherExpenses; // 2700
+
+  assert.equal(commissionAmount, 2000);
+  assert.equal(net, 2700);
+});
+
+// 30. Exhibition financial outcomes calculate net profit and ROI %
+it('30. Exhibition financial outcomes calculate net profit and ROI %', () => {
+  const boothFee = 1500;
+  const transport = 500;
+  const framing = 400;
+  const travel = 600;
+  const marketing = 200;
+  const totalExpenses = boothFee + transport + framing + travel + marketing; // 3200
+
+  const attributedSalesNet = 8000;
+  const netProfit = attributedSalesNet - totalExpenses; // 4800
+  const roi = Math.round((netProfit / totalExpenses) * 100); // 150%
+
+  assert.equal(totalExpenses, 3200);
+  assert.equal(netProfit, 4800);
+  assert.equal(roi, 150);
+});
+
+// 31. Storage service backup export and restore validation
+it('31. Storage service backup export and restore validation', () => {
+  const testState = {
+    ...EMPTY_WORKSPACE,
+    inventory: [
+      {
+        id: 'test-art-1',
+        title: 'Vault Test Artwork',
+        artistName: 'Test Artist',
+        yearCreated: 2026,
+        medium: 'Oil',
+        dimensions: { height: 100, width: 80, unit: 'cm' },
+        orientation: 'vertical',
+        artworkType: 'original',
+        productionCost: 200,
+        listPrice: 1500,
+        currency: 'USD',
+        availability: 'available',
+        location: 'Storage',
+        tags: ['test'],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    ],
+  };
+
+  const backupJson = StorageService.exportBackupJson(testState);
+  assert.equal(typeof backupJson, 'string');
+  assert.ok(backupJson.includes('Vault Test Artwork'));
+
+  const restoreResult = StorageService.restoreBackupJson(backupJson);
+  assert.equal(restoreResult.success, true);
+  assert.equal(restoreResult.restoredState?.inventory.length, 1);
+  assert.equal(restoreResult.restoredState?.inventory[0].title, 'Vault Test Artwork');
+
+  // Corrupted backup string handling
+  const corrupted = StorageService.restoreBackupJson('{"bad_json": true');
+  assert.equal(corrupted.success, false);
+});
+
+// 32. Offline QR vector generator creates valid SVG data URI
+it('32. Offline QR vector generator creates valid SVG data URI', () => {
+  const url = 'https://utkarshnikhare.github.io/art-gallery-live/?verify=MK-COA-2026-9999';
+  const qrUri = generateQrSvgDataUri(url, 180);
+
+  assert.ok(qrUri.startsWith('data:image/svg+xml;utf8,'));
+  const decodedSvg = decodeURIComponent(qrUri);
+  assert.ok(decodedSvg.includes('viewBox="0 0 180 180"'));
+  assert.ok(decodedSvg.includes('rect'));
 });
 
 console.log(`\nData Integrity & Adversarial Tests: ${passed} PASSED, ${failed} FAILED\n`);

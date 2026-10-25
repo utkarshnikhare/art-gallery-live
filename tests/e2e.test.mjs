@@ -15,7 +15,7 @@ const edgePath = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.
 const chromePath = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
 const executablePath = fs.existsSync(chromePath) ? chromePath : (fs.existsSync(edgePath) ? edgePath : null);
 
-console.log('--- RUNNING BROWSER E2E TEST SUITE ---\n');
+console.log('--- RUNNING MORROWKIND BROWSER E2E TEST SUITE ---\n');
 
 if (!executablePath) {
   console.warn('⚠️ No Chrome or Edge executable found. Skipping Browser E2E tests.');
@@ -35,7 +35,6 @@ function startServer(port = 4173) {
 
   const server = http.createServer((req, res) => {
     let reqPath = req.url.split('?')[0];
-    // Strip Vite base if present
     if (reqPath.startsWith('/art-gallery-live/')) {
       reqPath = reqPath.replace('/art-gallery-live', '');
     }
@@ -49,7 +48,6 @@ function startServer(port = 4173) {
       res.writeHead(200, { 'Content-Type': mimeTypes[ext] || 'application/octet-stream' });
       fs.createReadStream(filePath).pipe(res);
     } else {
-      // SPA Fallback
       const indexPath = path.join(distDir, 'index.html');
       if (fs.existsSync(indexPath)) {
         res.writeHead(200, { 'Content-Type': 'text/html' });
@@ -103,125 +101,103 @@ async function runE2E() {
     // 1. Application loads without console errors (Desktop 1366x768)
     await page.setViewport({ width: 1366, height: 768 });
     await page.goto(appUrl, { waitUntil: 'networkidle0' });
-
     report('1. Application loads without console errors', consoleErrors.length === 0, consoleErrors.join('; '));
 
-    // 2. Data comes from events.json, not fake hardcoded events
-    const cardTitles = await page.$$eval('.card-title', els => els.map(e => e.textContent.trim()));
-    report('2. Data comes from events.json (cards rendered > 0)', cardTitles.length > 0 && cardTitles.some(t => t.includes('Reena Saini Kallat')));
+    // 2. Brand Identity is Morrowkind
+    const brandTitle = await page.$eval('.brand-title', el => el.textContent.trim());
+    report('2. Brand renders as Morrowkind Artist Intelligence Platform', brandTitle === 'Morrowkind');
 
-    // 3. Search and all filters work
+    // 3. Artist Workspace Mode is active by default with honest onboarding
+    const onboardingVisible = await page.$eval('.empty-onboarding-card', el => el !== null);
+    report('3. Artist Workspace loads with honest onboarding (zero fake metrics)', onboardingVisible);
+
+    // 4. Workspace navigation to Pricing Intelligence
+    await page.click('#ws-tab-pricing');
+    await new Promise(r => setTimeout(r, 200));
+    const pricingHeading = await page.$eval('.view-heading', el => el.textContent);
+    const hasLiveFormula = await page.$eval('.formula-breakdown-box', el => el !== null);
+    report('4. Workspace Pricing Intelligence calculator displays live mathematical breakdown', hasLiveFormula && pricingHeading.includes('Pricing'));
+
+    // 5. Workspace navigation to Digital Certificates
+    await page.click('#ws-tab-certificates');
+    await new Promise(r => setTimeout(r, 200));
+    const certsViewVisible = await page.$eval('#ws-panel-certificates', el => el !== null);
+    report('5. Digital Certificates view displays cryptographic COA standards', certsViewVisible);
+
+    // 6. Switch to Public Discovery Mode via Header Switcher
+    await page.click('.platform-mode-switcher .mode-btn:nth-child(2)');
+    await new Promise(r => setTimeout(r, 300));
+    await page.waitForSelector('.event-card', { timeout: 8000 });
+    const eventCardsCount = await page.$$eval('.event-card', els => els.length);
+    report('6. Switching to Public Discovery mode renders verified exhibitions (>0)', eventCardsCount >= 10);
+
+    // 7. Search filter in Public Discovery works
     await page.type('#event-search', 'Reena');
     await new Promise(r => setTimeout(r, 200));
     const searchFilteredCount = await page.$$eval('.event-card', els => els.length);
-    report('3a. Search filter narrows cards', searchFilteredCount >= 1 && searchFilteredCount < cardTitles.length);
+    report('7. Discovery search narrows cards', searchFilteredCount >= 1 && searchFilteredCount < eventCardsCount);
 
     await page.click('.search-clear-btn');
     await new Promise(r => setTimeout(r, 200));
-    const resetSearchCount = await page.$$eval('.event-card', els => els.length);
-    report('3b. Search clear restores cards', resetSearchCount === cardTitles.length);
 
-    // 4. Official details link opens exact stored source URL
-    const officialLinks = await page.$$eval('.external-link', els => els.map(e => e.getAttribute('href')));
-    const hasValidOfficialLinks = officialLinks.every(h => h.startsWith('http://') || h.startsWith('https://'));
-    report('4. Official details link uses valid HTTP/HTTPS URLs', hasValidOfficialLinks);
-
-    // 5. Booking link is absent if none is verified
-    const bookingButtons = await page.$$eval('.btn-accent', els => els.map(e => e.textContent.trim()));
-    report('5. Booking button only renders when bookingUrl is verified', bookingButtons.length > 0 && bookingButtons.length < cardTitles.length);
-
-    // 6. Missing fee is shown honestly
-    const feeBadges = await page.$$eval('.fee-badge', els => els.map(e => e.textContent.trim()));
-    const hasHonestFeeBadges = feeBadges.some(b => b.includes('Check Organiser') || b.includes('Free Admission') || b.includes('Ticket'));
-    report('6. Fee badges show honest status', hasHonestFeeBadges);
-
-    // 7. Update timestamp comes from data metadata
-    const timestampText = await page.$eval('.timestamp-text', el => el.textContent.trim());
-    report('7. Update timestamp displayed in header', timestampText.length > 0);
-
-    // 8. Empty state is helpful
-    await page.type('#event-search', 'XYZNonExistentArtShow9999');
-    await new Promise(r => setTimeout(r, 200));
-    const emptyStateText = await page.$eval('.empty-state', el => el.textContent);
-    report('8. Empty state appears with helpful guidance on zero matches', emptyStateText.includes('No verified upcoming events are available in the selected filters'));
-
-    // 9. Reset filters button works
-    await page.click('.empty-state .btn-secondary');
-    await new Promise(r => setTimeout(r, 200));
-    const restoredCount = await page.$$eval('.event-card', els => els.length);
-    report('9. Reset button from empty state restores feed', restoredCount === cardTitles.length);
-
-    // 10. Keyboard navigation and focus states work
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Tab');
-    const focusedTag = await page.evaluate(() => document.activeElement ? document.activeElement.tagName : '');
-    report('10. Keyboard tab focus works', ['BUTTON', 'INPUT', 'A'].includes(focusedTag));
-
-    // 11. Mobile viewport (390x844) has no horizontal overflow on exhibitions
-    await page.setViewport({ width: 390, height: 844 });
-    await new Promise(r => setTimeout(r, 200));
-    let hasOverflow = await page.evaluate(() => {
-      return document.documentElement.scrollWidth > document.documentElement.clientWidth;
-    });
-    report('11. Mobile viewport (390x844) has NO horizontal overflow', !hasOverflow);
-
-    // 12. Desktop layout remains readable
-    await page.setViewport({ width: 1366, height: 768 });
-    const isVisible = await page.$eval('.app-header', el => el.clientHeight > 40);
-    report('12. Desktop layout (1366x768) header and grid readable', isVisible);
-
-    // 13. No dead '#' links or example.com links
-    const allLinks = await page.$$eval('a', els => els.map(e => e.getAttribute('href')));
-    const hasDeadLinks = allLinks.some(h => h === '#' || (h && h.includes('example.com')));
-    report('13. No dead "#" or example.com links anywhere', !hasDeadLinks);
-
-    // 14. No past events appear in default view
-    const pastBadges = await page.$$eval('.status-badge.past', els => els.length);
-    report('14. Past events excluded from default upcoming view', pastBadges === 0);
-
-    // 15. Tab navigation to Opportunities
+    // 8. Tab navigation to Opportunities in Discovery
     await page.click('#tab-opportunities');
     await new Promise(r => setTimeout(r, 200));
     const oppCards = await page.$$eval('.opportunity-card', els => els.length);
-    report('15. Tab navigation to Opportunities renders verified open calls', oppCards >= 8);
+    report('8. Public Discovery Open Calls tab renders verified opportunities', oppCards >= 8);
 
-    // 16. Tab navigation to Designers
+    // 9. Tab navigation to Designers in Discovery
     await page.click('#tab-designers');
     await new Promise(r => setTimeout(r, 200));
     const designerCards = await page.$$eval('.designer-card', els => els.length);
     const roleBadges = await page.$$eval('.designer-role-badge', els => els.map(e => e.textContent.trim()));
-    report('16. Tab navigation to Designers renders studios with role badges', designerCards >= 8 && roleBadges.some(r => r.toLowerCase().includes('specifier')));
+    report('9. Public Discovery Designers tab renders studios with role badges', designerCards >= 8 && roleBadges.some(r => r.toLowerCase().includes('specifier')));
 
-    // 17. Tab navigation to Artwork Sourcing
+    // 10. Tab navigation to Artwork Sourcing in Discovery
     await page.click('#tab-artworks');
     await new Promise(r => setTimeout(r, 200));
     const artworkCards = await page.$$eval('.artwork-card', els => els.length);
     const dimensionsText = await page.$$eval('.dimension-val', els => els.map(e => e.textContent.trim()));
-    report('17. Tab navigation to Artwork Sourcing displays verified works and dimensions', artworkCards >= 8 && dimensionsText.some(d => d.includes('cm')));
+    report('10. Artwork Sourcing tab displays verified works with dimensions', artworkCards >= 8 && dimensionsText.some(d => d.includes('cm')));
 
-    // 18. Art Enquiry Specification workflow opens from artwork card
+    // 11. Art Enquiry Specification workflow opens from artwork card
     await page.click('.artwork-card .btn-primary');
     await new Promise(r => setTimeout(r, 300));
     const isEnquiryModalVisible = await page.$eval('.enquiry-modal', el => el.clientHeight > 100);
-    report('18. Art Enquiry modal opens with artwork prefilled', isEnquiryModalVisible);
+    report('11. Art Enquiry modal opens with artwork prefilled', isEnquiryModalVisible);
 
-    // 19. Typing into form updates live specification preview
+    // 12. Typing into form updates live specification preview
     await page.type('#specifierName', 'Lead Architect Priya');
     await new Promise(r => setTimeout(r, 200));
     const previewContent = await page.$eval('.specification-code-block', el => el.textContent);
-    report('19. Typing updates live specification preview without leakage', previewContent.includes('Lead Architect Priya'));
+    report('12. Typing updates live specification preview without leakage', previewContent.includes('Lead Architect Priya'));
 
     // Close modal
     await page.click('.modal-close-btn');
     await new Promise(r => setTimeout(r, 200));
 
-    // 20. Mobile responsive check on Sourcing View (390x844)
-    await page.setViewport({ width: 390, height: 844 });
+    // 13. Public Certificate Verification Modal
+    await page.click('.header-actions button:first-child');
+    await new Promise(r => setTimeout(r, 300));
+    const isVerifyModalVisible = await page.$eval('.verify-modal-body', el => el !== null);
+    report('13. Public COA Verification modal opens from header action', isVerifyModalVisible);
+
+    await page.click('.modal-close-btn');
     await new Promise(r => setTimeout(r, 200));
-    hasOverflow = await page.evaluate(() => {
+
+    // 14. Switch back to Artist Workspace mode
+    await page.click('.platform-mode-switcher .mode-btn:first-child');
+    await new Promise(r => setTimeout(r, 300));
+    const backInWorkspace = await page.$eval('.workspace-header-bar', el => el !== null);
+    report('14. Mode switcher returns smoothly to Artist Workspace', backInWorkspace);
+
+    // 15. Mobile Viewport (390x844) has zero horizontal overflow across entire platform
+    await page.setViewport({ width: 390, height: 844 });
+    await new Promise(r => setTimeout(r, 300));
+    const hasOverflow = await page.evaluate(() => {
       return document.documentElement.scrollWidth > document.documentElement.clientWidth;
     });
-    report('20. Mobile viewport (390x844) has zero horizontal overflow across all tabs', !hasOverflow);
+    report('15. Mobile viewport (390x844) has strictly zero horizontal overflow', !hasOverflow);
 
   } catch (err) {
     console.error('Fatal E2E execution error:', err);

@@ -1,3 +1,11 @@
+// ============================================================================
+// MORROWKIND — ARTIST INTELLIGENCE PLATFORM & GLOBAL ART DISCOVERY TYPES
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+// 1. PUBLIC ART DISCOVERY TYPES (PRESERVED)
+// ----------------------------------------------------------------------------
+
 export type EventCategory = 
   | 'exhibition'
   | 'gallery-show'
@@ -9,7 +17,6 @@ export type EventCategory =
   | 'other';
 
 export type EventFormat = 'in-person' | 'online' | 'hybrid' | 'unknown';
-
 export type EntryFeeType = 'free' | 'price' | 'unknown' | 'check-organiser';
 
 export interface EntryFee {
@@ -48,7 +55,7 @@ export interface ArtEvent {
   title: string;
   category: EventCategory;
   description?: string;
-  startDate: string; // ISO YYYY-MM-DD or ISO 8601 string
+  startDate: string;
   endDate?: string;
   timezone?: string;
   timeText?: string;
@@ -64,7 +71,7 @@ export interface ArtEvent {
   sourceName: string;
   sourceType: SourceType;
   verificationStatus: VerificationStatus;
-  verifiedFields: string[]; // e.g. ['title', 'dates', 'venue', 'admissionFee', 'format']
+  verifiedFields: string[];
   lastCheckedAt: string;
   lastVerifiedAt: string;
   firstSeenAt?: string;
@@ -133,17 +140,13 @@ export interface EventDataset {
 
 export interface FilterState {
   searchQuery: string;
-  regionCategory: string; // 'all' | 'pune' | 'mumbai' | 'maharashtra' | 'india' | 'international' | 'online'
-  category: string; // 'all' | EventCategory
+  regionCategory: string;
+  category: string;
   timeRange: 'all' | 'happening-now' | 'upcoming';
   fee: 'all' | 'free' | 'price' | 'unknown';
   format: 'all' | 'in-person' | 'online' | 'hybrid';
   verificationLevel: 'all' | 'official-event-verified' | 'has-booking';
 }
-
-// ==========================================
-// NEW MODULE: ART OPPORTUNITIES & OPEN CALLS
-// ==========================================
 
 export type OpportunityType = 
   | 'residency'
@@ -165,7 +168,7 @@ export interface ArtOpportunity {
   country: string;
   format: EventFormat;
   description: string;
-  submissionDeadline: string; // ISO YYYY-MM-DD
+  submissionDeadline: string;
   deadlineStatus: OpportunityDeadlineStatus;
   entryFee: EntryFee;
   stipendOrAwardText?: string;
@@ -176,28 +179,6 @@ export interface ArtOpportunity {
   verifiedFields: string[];
   lastVerifiedAt: string;
 }
-
-export interface OpportunitiesDataset {
-  metadata: {
-    lastSuccessfullyUpdated: string;
-    totalOpportunities: number;
-    openCount: number;
-    coverageNotice: string;
-  };
-  opportunities: ArtOpportunity[];
-}
-
-export interface OpportunityFilterState {
-  searchQuery: string;
-  opportunityType: string; // 'all' | OpportunityType
-  deadlineStatus: string; // 'all' | 'open' | 'closing-soon'
-  fee: string; // 'all' | 'free' | 'price'
-  country: string; // 'all' | 'India' | 'International'
-}
-
-// ==============================================================
-// NEW MODULE: INTERIOR DESIGNERS & ART BUYERS / SPECIFIERS
-// ==============================================================
 
 export type ArtSourcingRole = 
   | 'specifier'
@@ -234,29 +215,7 @@ export interface InteriorDesignerProfile {
   lastVerifiedAt: string;
 }
 
-export interface DesignersDataset {
-  metadata: {
-    lastSuccessfullyUpdated: string;
-    totalStudios: number;
-    coverageNotice: string;
-  };
-  designers: InteriorDesignerProfile[];
-}
-
-export interface DesignerFilterState {
-  searchQuery: string;
-  country: string; // 'all' | 'India' | 'International' | 'UK' | 'USA'
-  city: string; // 'all' | string
-  projectType: string; // 'all' | ProjectType
-  sourcingRole: string; // 'all' | ArtSourcingRole
-}
-
-// ==========================================
-// NEW MODULE: ARTWORK SOURCING FOR INTERIORS
-// ==========================================
-
 export type ArtworkOrientation = 'horizontal' | 'vertical' | 'square';
-
 export type FramingStatus = 'Framed' | 'Unframed' | 'Stretched Canvas' | 'Custom Framing Available';
 
 export interface ArtworkSourcingItem {
@@ -267,7 +226,7 @@ export interface ArtworkSourcingItem {
   sourceUrl: string;
   medium: string;
   style: string;
-  dominantPalette: string[]; // e.g. ['Warm Ochre', 'Raw Linen', 'Deep Charcoal']
+  dominantPalette: string[];
   dimensionsCm: {
     height: number;
     width: number;
@@ -280,36 +239,13 @@ export interface ArtworkSourcingItem {
   priceType: 'fixed' | 'price-on-request' | 'range';
   priceAmount?: number;
   currency?: string;
-  suitableSpaces: string[]; // e.g. ['Hotel Lobby', 'Living Room', 'Executive Boardroom']
+  suitableSpaces: string[];
   locationCity: string;
   locationCountry: string;
   verifiedFields: string[];
   lastVerifiedAt: string;
   imageUrl: string;
 }
-
-export interface ArtworksDataset {
-  metadata: {
-    lastSuccessfullyUpdated: string;
-    totalArtworks: number;
-    coverageNotice: string;
-  };
-  artworks: ArtworkSourcingItem[];
-}
-
-export interface ArtworkFilterState {
-  searchQuery: string;
-  medium: string; // 'all' | string
-  style: string; // 'all' | string
-  orientation: string; // 'all' | ArtworkOrientation
-  scale: string; // 'all' | 'large' (>=120cm) | 'medium' (60-120cm) | 'small' (<60cm)
-  commissionOnly: boolean;
-  suitableSpace: string; // 'all' | string
-}
-
-// ==========================================
-// ART ENQUIRY WORKFLOW MODEL
-// ==========================================
 
 export interface ArtEnquiryPayload {
   specifierName: string;
@@ -330,3 +266,280 @@ export interface ArtEnquiryPayload {
 }
 
 export type ActiveAppTab = 'events' | 'opportunities' | 'designers' | 'artworks';
+
+export interface OpportunityFilterState {
+  searchQuery: string;
+  opportunityType: string;
+  deadlineStatus: string;
+  fee: string;
+  country: string;
+}
+
+export interface DesignerFilterState {
+  searchQuery: string;
+  country: string;
+  city: string;
+  projectType: string;
+  sourcingRole: string;
+}
+
+export interface ArtworkFilterState {
+  searchQuery: string;
+  medium: string;
+  style: string;
+  orientation: string;
+  scale: string;
+  commissionOnly: boolean;
+  suitableSpace: string;
+}
+
+// ----------------------------------------------------------------------------
+// 2. ARTIST INTELLIGENCE WORKSPACE DOMAIN MODELS (MORROWKIND)
+// ----------------------------------------------------------------------------
+
+export type WorkspaceModuleId =
+  | 'dashboard'
+  | 'inventory'
+  | 'sales'
+  | 'collectors'
+  | 'exhibitions'
+  | 'pricing'
+  | 'marketing'
+  | 'certificates'
+  | 'licensing'
+  | 'catalog'
+  | 'backup'
+  | 'discovery';
+
+export type ArtworkAvailability =
+  | 'available'
+  | 'reserved'
+  | 'sold'
+  | 'on-exhibition'
+  | 'on-consignment'
+  | 'archived'
+  | 'destroyed';
+
+export type ArtworkType = 'original' | 'limited-edition' | 'open-edition' | 'sculpture' | 'print' | 'digital';
+
+export interface UserArtwork {
+  id: string;
+  title: string;
+  artistName: string;
+  yearCreated: number;
+  medium: string;
+  materials?: string;
+  technique?: string;
+  style?: string;
+  dimensions: {
+    height: number;
+    width: number;
+    depth?: number;
+    unit: 'cm' | 'in';
+  };
+  orientation: ArtworkOrientation;
+  artworkType: ArtworkType;
+  editionNumber?: number;
+  editionSize?: number;
+  productionCost: number;
+  listPrice: number;
+  currency: string;
+  availability: ArtworkAvailability;
+  location: string;
+  framingNotes?: string;
+  conditionNotes?: string;
+  provenanceNotes?: string;
+  copyrightNotes?: string;
+  tags: string[];
+  imageUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type SalesChannel =
+  | 'Direct to Collector'
+  | 'Gallery Consignment'
+  | 'Art Fair'
+  | 'Online Marketplace'
+  | 'Interior Designer / Architect'
+  | 'Corporate Art Commission'
+  | 'Auction'
+  | 'Studio Sale'
+  | 'Other';
+
+export type PaymentStatus = 'Paid' | 'Pending' | 'Partially Paid' | 'Refunded';
+
+export interface SaleTransaction {
+  id: string;
+  artworkId: string;
+  artworkTitle: string;
+  saleDate: string; // ISO date YYYY-MM-DD
+  buyerId?: string;
+  buyerName: string;
+  channel: SalesChannel;
+  grossAmount: number;
+  galleryCommissionRate: number; // percentage, e.g. 50
+  galleryCommissionAmount: number;
+  discountAmount: number;
+  taxAmount: number;
+  shippingAmount: number;
+  otherExpenses: number;
+  netProceeds: number; // calculated: gross - commission - discount - otherExpenses
+  currency: string;
+  paymentStatus: PaymentStatus;
+  paymentDate?: string;
+  exhibitionId?: string;
+  invoiceNumber?: string;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface CollectorContact {
+  id: string;
+  name: string;
+  organization?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city: string;
+  country: string;
+  preferredCurrency: string;
+  artworkInterests: string[];
+  totalPurchasedCount: number;
+  totalSpentAmount: number;
+  relationshipNotes?: string;
+  lastContactDate?: string;
+  nextFollowUpDate?: string;
+  consentRecorded: boolean;
+  createdAt: string;
+}
+
+export interface ArtistExhibitionRecord {
+  id: string;
+  title: string;
+  organiser: string;
+  venueName: string;
+  city: string;
+  country: string;
+  startDate: string;
+  endDate: string;
+  applicationDeadline?: string;
+  // Expense items
+  applicationFee: number;
+  participationFee: number;
+  transportInsuranceCost: number;
+  framingInstallationCost: number;
+  travelAccommodationCost: number;
+  marketingCost: number;
+  totalExpenses: number; // Sum of all costs
+  // Artworks and outcomes
+  artworksSubmittedCount: number;
+  attributedSalesGross: number;
+  attributedSalesNet: number;
+  netProfit: number; // attributedSalesNet - totalExpenses
+  roiPercentage: number; // (netProfit / totalExpenses) * 100
+  currency: string;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface MarketingCampaign {
+  id: string;
+  campaignName: string;
+  objective: string;
+  artworkPromoted?: string;
+  platform: 'Instagram' | 'Newsletter' | 'Website' | 'Art Fair Print' | 'Facebook' | 'LinkedIn' | 'Other';
+  startDate: string;
+  endDate?: string;
+  isDataConnected: boolean; // false = manual entry, true = verified API connection
+  reachOrImpressions: number;
+  clicksOrInquiries: number;
+  adSpend: number;
+  attributedSalesRevenue: number;
+  currency: string;
+  notes?: string;
+}
+
+export interface DigitalCertificate {
+  certificateId: string; // e.g. MK-COA-2026-7842
+  artworkId: string;
+  artworkTitle: string;
+  artistName: string;
+  yearCreated: number;
+  medium: string;
+  dimensionsText: string;
+  editionText: string;
+  issueDate: string;
+  issuer: string;
+  sha256Fingerprint: string; // Cryptographic SHA-256 hash of title, artist, year, medium, dimensions
+  verificationUrl: string;
+  status: 'valid' | 'revoked' | 'superseded';
+  blockchainAnchor: {
+    isAnchored: boolean;
+    network?: string; // e.g. 'Polygon Amoy Testnet'
+    transactionHash?: string;
+    blockNumber?: number;
+    contractAddress?: string;
+    note: string; // Transparent declaration that anchor is distinct from legal title
+  };
+}
+
+export interface LicensingAgreement {
+  id: string;
+  artworkId: string;
+  artworkTitle: string;
+  licenseeName: string;
+  licenseType: 'Commercial Merchandise' | 'Book / Editorial Cover' | 'Film / Set Placement' | 'Digital Asset' | 'Corporate Branding';
+  permittedTerritory: string;
+  isExclusive: boolean;
+  startDate: string;
+  endDate: string;
+  licenseFee: number;
+  royaltyPercentage?: number;
+  currency: string;
+  paymentStatus: 'Paid' | 'Pending' | 'Due';
+  renewalReminderDate?: string;
+  rightsNotes?: string;
+  createdAt: string;
+}
+
+export interface AuditLogEntry {
+  id: string;
+  timestamp: string;
+  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'IMPORT' | 'RESTORE' | 'ISSUE_CERTIFICATE';
+  entityType: 'ARTWORK' | 'SALE' | 'COLLECTOR' | 'EXHIBITION' | 'CERTIFICATE' | 'LICENSING' | 'SETTINGS';
+  entityId: string;
+  summary: string;
+  actor: string;
+}
+
+export interface ArtistProfileSettings {
+  artistName: string;
+  studioName?: string;
+  email: string;
+  website?: string;
+  country: string;
+  baseCurrency: string; // 'USD' | 'EUR' | 'GBP' | 'INR'
+  measurementUnit: 'cm' | 'in';
+  hourlyRate: number; // For pricing calculator
+  defaultMarkupPercent: number; // e.g. 100% or 50% gallery split
+  vaultProtected: boolean;
+  vaultPasscodeHash?: string;
+  supabaseConfig?: {
+    configured: boolean;
+    url?: string;
+    note: string;
+  };
+}
+
+export interface ArtistWorkspaceState {
+  profile: ArtistProfileSettings;
+  inventory: UserArtwork[];
+  sales: SaleTransaction[];
+  collectors: CollectorContact[];
+  exhibitions: ArtistExhibitionRecord[];
+  campaigns: MarketingCampaign[];
+  certificates: DigitalCertificate[];
+  licensing: LicensingAgreement[];
+  auditLogs: AuditLogEntry[];
+}
