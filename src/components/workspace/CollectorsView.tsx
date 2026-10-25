@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { CollectorContact } from '../../types';
+import { formatDateOnly } from '../../utils/dateUtils';
 
 interface CollectorsViewProps {
   collectors: CollectorContact[];
@@ -201,7 +202,7 @@ export const CollectorsView: React.FC<CollectorsViewProps> = ({
 
               {col.nextFollowUpDate && (
                 <div className="followup-strip">
-                  ⏱️ Next Follow-up: <strong>{new Date(col.nextFollowUpDate).toLocaleDateString()}</strong>
+                  ⏱️ Next Follow-up: <strong>{formatDateOnly(col.nextFollowUpDate)}</strong>
                 </div>
               )}
 

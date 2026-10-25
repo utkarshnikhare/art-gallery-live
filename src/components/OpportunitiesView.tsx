@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { ArtOpportunity, OpportunityFilterState } from '../types';
+import { formatDateOnly, getDaysRemainingIST } from '../utils/dateUtils';
 
 interface OpportunitiesViewProps {
   opportunities: ArtOpportunity[];
@@ -62,18 +63,12 @@ export const OpportunitiesView: React.FC<OpportunitiesViewProps> = ({
   }, [opportunities, filters]);
 
   const formatDeadline = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    return formatDateOnly(dateStr);
   };
 
   const getDaysRemaining = (dateStr: string) => {
-    const deadline = new Date(dateStr).getTime();
-    const now = Date.now();
-    const diff = Math.ceil((deadline - now) / (1000 * 60 * 60 * 24));
-    if (diff < 0) return 'Deadline passed';
-    if (diff === 0) return 'Closes today';
-    if (diff === 1) return '1 day remaining';
-    return `${diff} days remaining`;
+    const res = getDaysRemainingIST(dateStr);
+    return res.text;
   };
 
   return (

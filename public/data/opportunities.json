@@ -57,8 +57,8 @@
       },
       "stipendOrAwardText": "Production grants ranging from INR 2,00,000 to INR 5,00,000 + project fabrication support",
       "eligibilitySummary": "Open to emerging and mid-career artists, sculptors, installation artists, and digital creators residing across South Asia.",
-      "officialGuidelinesUrl": "https://serendipityarts.org/initiatives/grants/",
-      "submissionUrl": "https://serendipityarts.org/apply/",
+      "officialGuidelinesUrl": "https://serendipityarts.org/grants/",
+      "submissionUrl": "https://serendipityarts.org/grants/",
       "sourceName": "Serendipity Arts Foundation",
       "verifiedFields": [
         "title",
@@ -68,7 +68,7 @@
         "stipendOrAwardText",
         "eligibilitySummary"
       ],
-      "lastVerifiedAt": "2026-10-25T14:00:00.000Z"
+      "lastVerifiedAt": "2026-10-25T17:45:00+05:30"
     },
     {
       "id": "opp-gasworks-london-residency",
@@ -121,8 +121,8 @@
       },
       "stipendOrAwardText": "Fully funded accommodation, return airfare, weekly stipend of £300, and institutional visits",
       "eligibilitySummary": "Open to curators, contemporary art writers, and visual artists with an established critical research portfolio.",
-      "officialGuidelinesUrl": "https://www.delfinafoundation.com/open-calls/",
-      "submissionUrl": "https://www.delfinafoundation.com/open-calls/current-calls/",
+      "officialGuidelinesUrl": "https://www.delfinafoundation.com/open-calls/current/",
+      "submissionUrl": "https://www.delfinafoundation.com/open-calls/current/",
       "sourceName": "Delfina Foundation London",
       "verifiedFields": [
         "title",
@@ -132,7 +132,7 @@
         "stipendOrAwardText",
         "eligibilitySummary"
       ],
-      "lastVerifiedAt": "2026-10-25T14:00:00.000Z"
+      "lastVerifiedAt": "2026-10-25T17:45:00+05:30"
     },
     {
       "id": "opp-kochi-students-biennale",
@@ -153,8 +153,8 @@
       },
       "stipendOrAwardText": "Exhibition production grant, freight assistance, and round-trip travel to Kochi for install",
       "eligibilitySummary": "Enrolled BFA/MFA students or graduates within 2 years of completing an accredited visual arts degree in India.",
-      "officialGuidelinesUrl": "https://kochibiennale.org/students-biennale/",
-      "submissionUrl": "https://kochibiennale.org/open-calls/",
+      "officialGuidelinesUrl": "https://www.kochimuzirisbiennale.org/careers/",
+      "submissionUrl": "https://www.kochimuzirisbiennale.org/careers/",
       "sourceName": "Kochi Biennale Foundation Official",
       "verifiedFields": [
         "title",
@@ -164,7 +164,7 @@
         "stipendOrAwardText",
         "eligibilitySummary"
       ],
-      "lastVerifiedAt": "2026-10-25T14:00:00.000Z"
+      "lastVerifiedAt": "2026-10-25T17:45:00+05:30"
     },
     {
       "id": "opp-british-council-ctc",
@@ -249,8 +249,8 @@
       },
       "stipendOrAwardText": "Monthly living allowance of approx. €3,000 + private on-site studio apartment at Villa Medici",
       "eligibilitySummary": "Open to international artists, sculptors, and creative practitioners with a proven record of notable exhibitions.",
-      "officialGuidelinesUrl": "https://www.villamedici.it/en/residencies/",
-      "submissionUrl": "https://www.villamedici.it/en/competitions/",
+      "officialGuidelinesUrl": "https://villamedici.it/en/",
+      "submissionUrl": "https://villamedici.it/en/",
       "sourceName": "Villa Medici Académie de France",
       "verifiedFields": [
         "title",
@@ -260,7 +260,7 @@
         "stipendOrAwardText",
         "eligibilitySummary"
       ],
-      "lastVerifiedAt": "2026-10-25T14:00:00.000Z"
+      "lastVerifiedAt": "2026-10-25T17:45:00+05:30"
     }
   ]
 }

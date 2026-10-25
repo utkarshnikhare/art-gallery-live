@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DigitalCertificate, VerificationOutcome } from '../types';
+import { formatInstantToIST } from '../utils/dateUtils';
 import { 
   verifyPortableProofToken, 
   LEGAL_IDENTITY_DISCLAIMER, 
@@ -229,7 +230,7 @@ export const PublicVerificationModal: React.FC<PublicVerificationModalProps> = (
                     <strong>Revocation Reason:</strong> {matchedCert.revocationReason || 'Revoked by issuing artist/studio.'}
                   </p>
                   {matchedCert.revokedAt && (
-                    <p><strong>Revoked On:</strong> {new Date(matchedCert.revokedAt).toLocaleString()}</p>
+                    <p><strong>Revoked On:</strong> {formatInstantToIST(matchedCert.revokedAt, { includeTime: true, includeZoneLabel: true })}</p>
                   )}
                   {matchedCert.supersededByCertificateId && (
                     <p>

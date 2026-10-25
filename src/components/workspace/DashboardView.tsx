@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArtistWorkspaceState, WorkspaceModuleId } from '../../types';
 import { summarizeMultiCurrency } from '../../utils/currencyService';
+import { formatDateOnly } from '../../utils/dateUtils';
 
 interface DashboardViewProps {
   state: ArtistWorkspaceState;
@@ -297,7 +298,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <div className="timeline-details">
                     <strong>{ex.title}</strong>
                     <span>{ex.venueName} • {ex.city}, {ex.country}</span>
-                    <span className="timeline-date">Opens: {new Date(ex.startDate).toLocaleDateString()}</span>
+                    <span className="timeline-date">Opens: {formatDateOnly(ex.startDate)}</span>
                   </div>
                 </div>
               ))}
@@ -308,7 +309,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <div className="timeline-details">
                     <strong>Licensing Renewal: {lic.licenseeName}</strong>
                     <span>{lic.artworkTitle} ({lic.licenseType})</span>
-                    <span className="timeline-date">Reminder: {new Date(lic.renewalReminderDate!).toLocaleDateString()}</span>
+                    <span className="timeline-date">Reminder: {formatDateOnly(lic.renewalReminderDate!)}</span>
                   </div>
                 </div>
               ))}

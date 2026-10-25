@@ -87,12 +87,45 @@ function validateEvent(e) {
   return { isValid: errors.length === 0, errors };
 }
 
-function parseDateSafe(dateStr, isEndOfDay = false) {
+function parseDateSafe(dateStr, isEndOfDay = false, timezone = 'Asia/Kolkata') {
   if (!dateStr) return 0;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-    const [year, month, day] = dateStr.split('-').map(Number);
-    const d = new Date(year, month - 1, day, isEndOfDay ? 23 : 0, isEndOfDay ? 59 : 0, isEndOfDay ? 59 : 0, isEndOfDay ? 999 : 0);
-    return d.getTime();
+  const clean = dateStr.split('T')[0];
+  const parts = clean.split('-').map(Number);
+  if (parts.length === 3 && !parts.some(isNaN) && !dateStr.includes(':')) {
+    const [year, month, day] = parts;
+    const h = isEndOfDay ? 23 : 0;
+    const m = isEndOfDay ? 59 : 0;
+    const s = isEndOfDay ? 59 : 0;
+    const ms = isEndOfDay ? 999 : 0;
+    try {
+      const utcGuess = Date.UTC(year, month - 1, day, h, m, s, ms);
+      const invDate = new Date(utcGuess);
+      const tzParts = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        second: 'numeric',
+        hour12: false,
+      }).formatToParts(invDate);
+
+      const tzMap = {};
+      tzParts.forEach(p => { tzMap[p.type] = p.value; });
+      const tzYear = Number(tzMap.year);
+      const tzMonth = Number(tzMap.month);
+      const tzDay = Number(tzMap.day);
+      const tzHour = Number(tzMap.hour === '24' ? '0' : tzMap.hour);
+      const tzMin = Number(tzMap.minute);
+      const tzSec = Number(tzMap.second);
+
+      const tzAsUtc = Date.UTC(tzYear, tzMonth - 1, tzDay, tzHour, tzMin, tzSec, ms);
+      const offsetMs = tzAsUtc - utcGuess;
+      return utcGuess - offsetMs;
+    } catch {
+      return new Date(year, month - 1, day, h, m, s, ms).getTime();
+    }
   }
   const parsed = new Date(dateStr).getTime();
   return isNaN(parsed) ? 0 : parsed;
@@ -102,8 +135,9 @@ function calculateStatus(e, nowMs = Date.now()) {
   if (e.eventStatus === 'cancelled') return 'cancelled';
   if (e.eventStatus === 'postponed') return 'postponed';
 
-  const startMs = parseDateSafe(e.startDate, false);
-  const endMs = e.endDate ? parseDateSafe(e.endDate, true) : parseDateSafe(e.startDate, true);
+  const tz = e.timezone || 'Asia/Kolkata';
+  const startMs = parseDateSafe(e.startDate, false, tz);
+  const endMs = e.endDate ? parseDateSafe(e.endDate, true, tz) : parseDateSafe(e.startDate, true, tz);
 
   if (nowMs > endMs) return 'past';
   if (nowMs >= startMs && nowMs <= endMs) return 'happening-now';

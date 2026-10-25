@@ -1,5 +1,6 @@
 import React from 'react';
 import { DatasetMetadata } from '../types';
+import { formatInstantToIST } from '../utils/dateUtils';
 
 interface HeaderProps {
   metadata?: DatasetMetadata;
@@ -22,13 +23,11 @@ export const Header: React.FC<HeaderProps> = ({
     ? new Date(metadata.lastSuccessfullyUpdated)
     : null;
 
-  const formattedUpdate = lastSyncDate
-    ? lastSyncDate.toLocaleString('en-IN', {
-        day: 'numeric',
+  const formattedUpdate = metadata?.lastSuccessfullyUpdated
+    ? formatInstantToIST(metadata.lastSuccessfullyUpdated, {
         month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
+        includeTime: true,
+        includeZoneLabel: true,
       })
     : 'Daily sync';
 

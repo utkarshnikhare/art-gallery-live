@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ArtistExhibitionRecord, ArtEvent } from '../../types';
+import { formatDateRange } from '../../utils/dateUtils';
 
 interface ExhibitionsViewProps {
   exhibitions: ArtistExhibitionRecord[];
@@ -238,7 +239,7 @@ export const ExhibitionsView: React.FC<ExhibitionsViewProps> = ({
                     {ex.venueName} • <strong>{ex.organiser}</strong>
                   </div>
                   <div className="exhibition-dates">
-                    📅 {new Date(ex.startDate).toLocaleDateString()} – {new Date(ex.endDate).toLocaleDateString()}
+                    📅 {formatDateRange(ex.startDate, ex.endDate)}
                   </div>
                   <div className="exhibition-location">📍 {ex.city}, {ex.country}</div>
                 </div>

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { ArtEvent } from '../types';
-import { calculateEventStatus, formatDateRange } from '../utils/dateUtils';
+import { calculateEventStatus, formatDateRange, formatInstantToIST } from '../utils/dateUtils';
 
 interface EventModalProps {
   event: ArtEvent | null;
@@ -24,7 +24,7 @@ export const EventModal: React.FC<EventModalProps> = ({ event, onClose }) => {
   if (!event) return null;
 
   const status = calculateEventStatus(event);
-  const formattedDates = formatDateRange(event.startDate, event.endDate, event.timeText);
+  const formattedDates = formatDateRange(event.startDate, event.endDate, event.timeText, event.timezone);
 
   const reportUrl = `https://github.com/utkarshnikhare/art-gallery-live/issues/new?title=${encodeURIComponent(`[Event Correction] ${event.title}`)}&body=${encodeURIComponent(`Event ID: ${event.id}\nVenue: ${event.venueName}\nOfficial URL: ${event.officialUrl}\n\nPlease specify the updated dates, status, or fee:`)}`;
 
@@ -95,7 +95,7 @@ export const EventModal: React.FC<EventModalProps> = ({ event, onClose }) => {
           <div className="modal-detail-row">
             <strong>🔍 Verification Evidence:</strong>
             <span>
-              Verified by {event.sourceName} on {new Date(event.lastVerifiedAt).toLocaleString()}
+              Verified by {event.sourceName} on {formatInstantToIST(event.lastVerifiedAt, { includeTime: true, includeZoneLabel: true })}
             </span>
             <div className="verified-fields-strip" style={{ marginTop: '4px' }}>
               <span className="field-label">Verified Fields:</span>

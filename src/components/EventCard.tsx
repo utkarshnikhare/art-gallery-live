@@ -1,6 +1,6 @@
 import React from 'react';
 import { ArtEvent } from '../types';
-import { calculateEventStatus, formatDateRange } from '../utils/dateUtils';
+import { calculateEventStatus, formatDateRange, formatInstantToIST } from '../utils/dateUtils';
 
 interface EventCardProps {
   event: ArtEvent;
@@ -9,7 +9,7 @@ interface EventCardProps {
 
 export const EventCard: React.FC<EventCardProps> = ({ event, onOpenModal }) => {
   const status = calculateEventStatus(event);
-  const formattedDates = formatDateRange(event.startDate, event.endDate, event.timeText);
+  const formattedDates = formatDateRange(event.startDate, event.endDate, event.timeText, event.timezone);
 
   // Category labels
   const categoryLabels: Record<string, string> = {
@@ -116,8 +116,8 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onOpenModal }) => {
             <span key={field} className="field-tag">✓ {field}</span>
           ))}
           {event.lastCheckedAt && (
-            <span className="field-tag freshness-tag" title="Last checked timestamp">
-              {new Date(event.lastCheckedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+            <span className="field-tag freshness-tag" title="Last checked in Indian Standard Time (IST)">
+              {formatInstantToIST(event.lastCheckedAt, { includeTime: false })}
             </span>
           )}
         </div>

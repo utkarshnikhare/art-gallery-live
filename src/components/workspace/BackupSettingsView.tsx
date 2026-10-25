@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ArtistWorkspaceState, ArtistProfileSettings } from '../../types';
 import { StorageService } from '../../services/storageService';
 import { downloadFile } from '../../utils/csvService';
+import { formatInstantToIST } from '../../utils/dateUtils';
 
 interface BackupSettingsViewProps {
   state: ArtistWorkspaceState;
@@ -647,7 +648,7 @@ export const BackupSettingsView: React.FC<BackupSettingsViewProps> = ({
             <tbody>
               {state.auditLogs.map((log) => (
                 <tr key={log.id}>
-                  <td>{new Date(log.timestamp).toLocaleString()}</td>
+                  <td>{formatInstantToIST(log.timestamp, { includeTime: true, includeZoneLabel: true })}</td>
                   <td>
                     <span className="spec-tag">{log.action}</span>
                   </td>

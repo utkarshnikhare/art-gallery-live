@@ -10,7 +10,16 @@ import {
   isValidUrl, 
   isValidEmail 
 } from '../src/utils/validation.ts';
-import { calculateEventStatus, formatDateRange, parseDateSafe } from '../src/utils/dateUtils.ts';
+import { 
+  calculateEventStatus, 
+  formatDateRange, 
+  parseDateSafe, 
+  formatDateOnly, 
+  formatInstantToIST, 
+  formatVenueDateTime, 
+  getDaysRemainingIST, 
+  IST_TIMEZONE 
+} from '../src/utils/dateUtils.ts';
 import { filterEvents, sortEvents, DEFAULT_FILTERS } from '../src/utils/filterUtils.ts';
 import { runUpdatePipeline } from '../scripts/update_events.mjs';
 import { 
@@ -1644,6 +1653,180 @@ it('60. Financial Engine Correctness: Consignment sales net receivable balance d
   const depositReceived = 2000;
   const partialBalanceDue = Math.max(0, calculatedNet - depositReceived); // 3500
   assert.equal(partialBalanceDue, 3500, 'Partial balance due must reflect remaining net proceeds');
+});
+
+// 61. Exhibition Live URL & Canonical Slug Verification
+it('61. Exhibition Live URL & Canonical Slug Verification across all feed events', () => {
+  const eventsData = JSON.parse(fs.readFileSync(path.join(rootDir, 'public/data/events.json'), 'utf8'));
+  const events = eventsData.events;
+  assert.ok(events.length >= 17, 'Should have at least 17 events');
+
+  for (const e of events) {
+    assert.ok(isValidUrl(e.officialUrl), `Event ${e.id} must have valid officialUrl: ${e.officialUrl}`);
+    assert.ok(e.officialUrl.startsWith('https://'), `Event ${e.id} officialUrl must use HTTPS: ${e.officialUrl}`);
+    assert.ok(!e.officialUrl.includes('/#'), `Event ${e.id} officialUrl must not end in hash: ${e.officialUrl}`);
+    assert.ok(!e.officialUrl.includes('example.com'), `Event ${e.id} officialUrl must not be example: ${e.officialUrl}`);
+
+    if (e.bookingUrl) {
+      assert.ok(isValidUrl(e.bookingUrl), `Event ${e.id} bookingUrl must be valid: ${e.bookingUrl}`);
+      assert.ok(e.bookingUrl.startsWith('https://'), `Event ${e.id} bookingUrl must use HTTPS`);
+    }
+  }
+
+  // Explicit regression checks for prompt target exhibitions
+  const chemould = events.find(e => e.id === 'evt-chemould-reena-kallat');
+  assert.ok(chemould, 'Chemould event must exist');
+  assert.equal(chemould.officialUrl, 'https://www.gallerychemould.com/exhibitions/165-spectral-frequencies-reena-saini-kallat/');
+
+  const p88 = events.find(e => e.id === 'evt-project88-sarnath-banerjee');
+  assert.ok(p88, 'Project 88 event must exist');
+  assert.equal(p88.officialUrl, 'https://www.project88.in/exhibitions/129-badly-remembered-things-sarnath-banerjee/overview/');
+
+  const tao = events.find(e => e.id === 'evt-tao-kalpana-shah');
+  assert.ok(tao, 'Tao event must exist');
+  assert.equal(tao.officialUrl, 'https://www.taoartgallery.com/pages/current');
+
+  const akara = events.find(e => e.id === 'evt-akara-from-line-to-landscape');
+  assert.ok(akara, 'Akara event must exist');
+  assert.equal(akara.officialUrl, 'https://akaraart.com/exhibition/details/from-line-to-landscape:-works-on-paper');
+
+  const jnaf = events.find(e => e.id === 'evt-jnaf-jyoti-bhatt');
+  assert.ok(jnaf, 'JNAF event must exist');
+  assert.equal(jnaf.officialUrl, 'https://jnaf.org/exhibition/jyoti-bhatt-the-looking-glass/');
+
+  const nmacc = events.find(e => e.id === 'evt-nmacc-superblue');
+  assert.ok(nmacc, 'NMACC event must exist');
+  assert.equal(nmacc.officialUrl, 'https://www.nmacc.com/visual-arts/second-nature/');
+  assert.equal(nmacc.startDate, '2026-07-03');
+
+  const tateJulio = events.find(e => e.id === 'evt-tate-julio-le-parc');
+  assert.ok(tateJulio, 'Tate Julio event must exist');
+  assert.equal(tateJulio.officialUrl, 'https://www.tate.org.uk/whats-on/tate-modern/julio-le-parc');
+
+  const tateBell = events.find(e => e.id === 'evt-tate-bloomsbury');
+  assert.ok(tateBell, 'Tate Bloomsbury event must exist');
+  assert.equal(tateBell.officialUrl, 'https://www.tate.org.uk/whats-on/tate-britain/vanessa-bell-and-duncan-grant');
+});
+
+// 62. Zero-Shift Date-Only Calendar Parsing (formatDateOnly)
+it('62. Zero-Shift Date-Only Calendar Parsing across simulated client timezones', () => {
+  // Typical date strings
+  assert.equal(formatDateOnly('2026-11-30'), '30 Nov 2026');
+  assert.equal(formatDateOnly('2026-11-30', { month: 'long' }), '30 November 2026');
+  assert.equal(formatDateOnly('2026-01-01'), '1 Jan 2026');
+  assert.equal(formatDateOnly('2026-12-31'), '31 Dec 2026');
+
+  // Leap year check
+  assert.equal(formatDateOnly('2028-02-29'), '29 Feb 2028');
+
+  // Multi-day date range without shifting
+  const range1 = formatDateRange('2026-10-24', '2026-11-21');
+  assert.equal(range1, '24 Oct – 21 Nov 2026');
+
+  const rangeSameMonth = formatDateRange('2026-10-10', '2026-10-31');
+  assert.equal(rangeSameMonth, '10–31 Oct 2026');
+
+  const rangeSameDay = formatDateRange('2026-10-25', '2026-10-25');
+  assert.equal(rangeSameDay, '25 Oct 2026');
+
+  const rangeMultiYear = formatDateRange('2026-11-28', '2027-01-01');
+  assert.equal(rangeMultiYear, '28 Nov 2026 – 1 Jan 2027');
+});
+
+// 63. Indian Standard Time (IST, Asia/Kolkata) Formatting
+it('63. Indian Standard Time (IST, Asia/Kolkata) Formatting and Zone Labeling', () => {
+  assert.equal(IST_TIMEZONE, 'Asia/Kolkata');
+
+  // UTC instant to IST: 2026-10-25 09:20:00 UTC = 2026-10-25 14:50:00 IST (+5:30)
+  const utcInstant = '2026-10-25T09:20:00.000Z';
+  const istFormatted = formatInstantToIST(utcInstant);
+  assert.ok(istFormatted.includes('25 Oct 2026'), `Should contain date, got ${istFormatted}`);
+  assert.ok(istFormatted.includes('02:50') || istFormatted.includes('2:50'), `Should contain 2:50, got ${istFormatted}`);
+  assert.ok(istFormatted.endsWith('IST'), `Should append IST, got ${istFormatted}`);
+
+  // Midnight UTC boundary: 2026-10-25 00:00:00 UTC = 2026-10-25 05:30:00 IST
+  const midnightUtc = '2026-10-25T00:00:00.000Z';
+  const istMidnight = formatInstantToIST(midnightUtc);
+  assert.ok(istMidnight.includes('05:30') || istMidnight.includes('5:30'));
+  assert.ok(istMidnight.includes('am') || istMidnight.includes('AM'));
+  assert.ok(istMidnight.endsWith('IST'));
+
+  // Without time
+  const dateOnlyIst = formatInstantToIST(utcInstant, { includeTime: false });
+  assert.equal(dateOnlyIst, '25 Oct 2026');
+});
+
+// 64. Venue Local Time Preservation & International Exhibition Timezones
+it('64. Venue Local Time Preservation & International Exhibition Timezones', () => {
+  // London BST instant: 2026-10-15 12:00:00 UTC = 13:00 BST (Europe/London), 17:30 IST
+  const londonInstant = '2026-10-15T12:00:00.000Z';
+  const venueFormatted = formatVenueDateTime(londonInstant, 'Europe/London', { includeIST: true });
+  assert.ok(venueFormatted.includes('BST') || venueFormatted.includes('1:00') || venueFormatted.includes('13:00'));
+  assert.ok(venueFormatted.includes('IST'));
+
+  // Date range with non-IST venue timezone annotation
+  const tateRange = formatDateRange('2026-10-01', '2027-05-03', '10:00 AM – 6:00 PM', 'Europe/London');
+  assert.ok(tateRange.includes('London time'), `Should include London time annotation, got: ${tateRange}`);
+});
+
+// 65. Event Closing Boundary & Strict Past Status Protection
+it('65. Event Closing Boundary & Strict Past Status Protection', () => {
+  const testEvent = {
+    startDate: '2026-10-01',
+    endDate: '2026-10-25',
+    eventStatus: 'happening-now',
+    timezone: 'Asia/Kolkata'
+  };
+
+  // During exhibition run in IST (e.g. Oct 15, 2026 noon IST)
+  const midRunMs = parseDateSafe('2026-10-15', false, 'Asia/Kolkata');
+  assert.equal(calculateEventStatus(testEvent, midRunMs), 'happening-now');
+
+  // Final day before closing (Oct 25, 2026 23:59:50 IST = 18:29:50 UTC)
+  const lastSecondMs = parseDateSafe('2026-10-25', true, 'Asia/Kolkata') - 1000;
+  assert.equal(calculateEventStatus(testEvent, lastSecondMs), 'happening-now');
+
+  // Immediately after closing boundary (Oct 26, 2026 00:00:01 IST = 18:30:01 UTC Oct 25)
+  const expiredMs = parseDateSafe('2026-10-25', true, 'Asia/Kolkata') + 2000;
+  const expiredStatus = calculateEventStatus(testEvent, expiredMs);
+  assert.equal(expiredStatus, 'past', 'Ended exhibition must strictly be categorized as past');
+  assert.notEqual(expiredStatus, 'happening-now', 'Ended exhibition must NEVER return happening-now');
+
+  // Before opening (Sept 30, 2026)
+  const beforeOpeningMs = parseDateSafe('2026-09-30', false, 'Asia/Kolkata');
+  assert.equal(calculateEventStatus(testEvent, beforeOpeningMs), 'upcoming');
+});
+
+// 66. Application Deadline Countdown Arithmetic (IST End-of-Day Boundary)
+it('66. Application Deadline Countdown Arithmetic (IST End-of-Day Boundary)', () => {
+  const deadlineDate = '2026-11-30';
+
+  // 1. Closes today: simulated now is Nov 30, 2026 10:00 AM IST
+  const noonDeadlineDayMs = parseDateSafe('2026-11-30', false, 'Asia/Kolkata') + 10 * 3600 * 1000;
+  const todayRes = getDaysRemainingIST(deadlineDate, noonDeadlineDayMs);
+  assert.equal(todayRes.text, 'Closes today');
+  assert.equal(todayRes.closesToday, true);
+  assert.equal(todayRes.isPast, false);
+
+  // 2. 1 day remaining: simulated now is Nov 29, 2026 10:00 AM IST
+  const dayBeforeMs = parseDateSafe('2026-11-29', false, 'Asia/Kolkata') + 10 * 3600 * 1000;
+  const oneDayRes = getDaysRemainingIST(deadlineDate, dayBeforeMs);
+  assert.equal(oneDayRes.text, '1 day remaining');
+  assert.equal(oneDayRes.days, 1);
+  assert.equal(oneDayRes.isPast, false);
+
+  // 3. 5 days remaining: simulated now is Nov 25, 2026 10:00 AM IST
+  const fiveDaysBeforeMs = parseDateSafe('2026-11-25', false, 'Asia/Kolkata') + 10 * 3600 * 1000;
+  const fiveDaysRes = getDaysRemainingIST(deadlineDate, fiveDaysBeforeMs);
+  assert.equal(fiveDaysRes.text, '5 days remaining');
+  assert.equal(fiveDaysRes.days, 5);
+  assert.equal(fiveDaysRes.isPast, false);
+
+  // 4. Past deadline: simulated now is Dec 1, 2026 01:00 AM IST
+  const pastDeadlineMs = parseDateSafe('2026-12-01', false, 'Asia/Kolkata') + 3600 * 1000;
+  const pastRes = getDaysRemainingIST(deadlineDate, pastDeadlineMs);
+  assert.equal(pastRes.text, 'Deadline passed');
+  assert.equal(pastRes.isPast, true);
 });
 
 

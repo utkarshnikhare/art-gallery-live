@@ -137,6 +137,28 @@ async function runE2E() {
     const searchFilteredCount = await page.$$eval('.event-card', els => els.length);
     report('7. Discovery search narrows cards', searchFilteredCount >= 1 && searchFilteredCount < eventCardsCount);
 
+    // 7b. Exhibition Card Link Actions & Modal Verification
+    const officialHref = await page.$eval('.event-card .btn-primary.external-link', el => el.getAttribute('href'));
+    const reportHref = await page.$eval('.event-card .btn-report-link', el => el.getAttribute('href'));
+    const linkPass = officialHref && officialHref.startsWith('https://') && !officialHref.includes('#') &&
+                     reportHref && reportHref.includes('issues/new');
+    report('7b. Exhibition Card Official Details and Report Issue links are valid HTTPS destinations', linkPass);
+
+    // Open More Info Modal
+    await page.click('.event-card .btn-outline');
+    await new Promise(r => setTimeout(r, 300));
+    const modalVisible = await page.$eval('.modal-card', el => el !== null);
+    const modalOfficialHref = await page.$eval('.modal-footer .btn-primary', el => el.getAttribute('href'));
+    report('7c. Exhibition More Info modal opens with verified curatorial details & announcement link', modalVisible && modalOfficialHref.startsWith('https://'));
+
+    // Close modal
+    await page.click('.modal-close-btn');
+    await new Promise(r => setTimeout(r, 200));
+
+    // Timezone in Header check
+    const headerUpdateText = await page.$eval('.update-badge', el => el.textContent);
+    report('7d. Header displays Indian Standard Time (IST) synchronization timestamp', headerUpdateText.includes('IST'));
+
     await page.click('.search-clear-btn');
     await new Promise(r => setTimeout(r, 200));
 
