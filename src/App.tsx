@@ -114,11 +114,10 @@ export const App: React.FC = () => {
     }
 
     // Unencrypted mode: UI shoulder-surfing lock
-    if (workspaceState.profile.vaultPasscodeHash) {
-      if (unlockPasscode !== '1234' && unlockPasscode !== workspaceState.profile.vaultPasscodeHash) {
-        setUnlockError('Invalid studio passcode.');
-        return;
-      }
+    const expectedPasscode = workspaceState.profile.vaultPasscodeHash || '1234';
+    if (unlockPasscode !== expectedPasscode && unlockPasscode !== '1234') {
+      setUnlockError('Invalid studio passcode (Default: 1234).');
+      return;
     }
     setIsVaultLocked(false);
     setUnlockPasscode('');
