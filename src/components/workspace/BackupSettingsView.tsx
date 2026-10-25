@@ -32,6 +32,69 @@ export const BackupSettingsView: React.FC<BackupSettingsViewProps> = ({
   const [restoreEncPassphrase, setRestoreEncPassphrase] = useState('');
   const [restoreEncError, setRestoreEncError] = useState('');
 
+  // Storage In-Place Migration State
+  const [isStorageEncrypted, setIsStorageEncrypted] = useState(() => StorageService.isStorageEncryptedAtRest());
+  const [isMigrateModalOpen, setIsMigrateModalOpen] = useState(false);
+  const [migratePassphrase, setMigratePassphrase] = useState('');
+  const [migrateConfirm, setMigrateConfirm] = useState('');
+  const [migrateError, setMigrateError] = useState('');
+
+  const [isDisableModalOpen, setIsDisableModalOpen] = useState(false);
+  const [disablePassphrase, setDisablePassphrase] = useState('');
+  const [disableError, setDisableError] = useState('');
+
+  const handleMigrateToEncrypted = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMigrateError('');
+
+    if (migratePassphrase.length < 8) {
+      setMigrateError('Passphrase must be at least 8 characters long for AES-256 storage encryption.');
+      return;
+    }
+    if (migratePassphrase !== migrateConfirm) {
+      setMigrateError('Passphrases do not match. Please re-enter carefully.');
+      return;
+    }
+
+    const res = await StorageService.migrateToEncryptedAtRest(migratePassphrase);
+    if (res.success) {
+      setIsStorageEncrypted(true);
+      setIsMigrateModalOpen(false);
+      setMigratePassphrase('');
+      setMigrateConfirm('');
+      setRestoreMessage({
+        type: 'success',
+        text: 'Successfully migrated to AES-256-GCM Encrypted Storage at Rest! All residual plaintext records have been purged.'
+      });
+    } else {
+      setMigrateError(res.error || 'Migration failed.');
+    }
+  };
+
+  const handleMigrateToStandard = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setDisableError('');
+
+    if (!disablePassphrase) {
+      setDisableError('Please enter your vault passphrase to decrypt storage.');
+      return;
+    }
+
+    const res = await StorageService.migrateToStandardStorage(disablePassphrase);
+    if (res.success && res.state) {
+      setIsStorageEncrypted(false);
+      setIsDisableModalOpen(false);
+      setDisablePassphrase('');
+      onRestoreWorkspace(res.state);
+      setRestoreMessage({
+        type: 'success',
+        text: 'Storage returned to Standard Local Mode. Data preserved successfully.'
+      });
+    } else {
+      setDisableError(res.error || 'Failed to decrypt storage.');
+    }
+  };
+
   const handleProfileSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onUpdateProfile(profileForm);
@@ -268,6 +331,42 @@ export const BackupSettingsView: React.FC<BackupSettingsViewProps> = ({
 
           <div className="panel-divider"></div>
 
+          {/* Storage Mode & Migration Box */}
+          <div className="storage-mode-control-box">
+            <h4>Storage Security Mode</h4>
+            <div className="storage-mode-status">
+              <span className={`status-pill ${isStorageEncrypted ? 'pill-paid' : 'pill-standard'}`}>
+                {isStorageEncrypted ? '🔒 AES-256-GCM Encrypted at Rest' : '🛡️ Standard Local Storage (Default)'}
+              </span>
+            </div>
+            <p className="panel-desc">
+              {isStorageEncrypted
+                ? 'Your local workspace records are fully encrypted at rest. Raw disk inspection reveals strictly zero plaintext.'
+                : 'Standard mode stores records in an isolated browser sandbox. You can perform an in-place migration to AES-256 encryption at rest to cryptographically protect sensitive records on disk.'}
+            </p>
+            <div className="migration-actions-row">
+              {isStorageEncrypted ? (
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  onClick={() => setIsDisableModalOpen(true)}
+                >
+                  🔓 Decrypt Storage (Return to Standard Mode)
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setIsMigrateModalOpen(true)}
+                >
+                  🔒 Enable AES-256 Storage at Rest (In-Place Migration)
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="panel-divider"></div>
+
           <h4>Restore Workspace from Backup</h4>
           <div className="file-dropzone">
             <input type="file" accept=".json" onChange={handleRestoreFile} id="restoreFile" />
@@ -408,6 +507,99 @@ export const BackupSettingsView: React.FC<BackupSettingsViewProps> = ({
                 </button>
                 <button type="submit" className="btn btn-primary">
                   Decrypt & Restore
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* In-Place Migration to Encrypted Modal */}
+      {isMigrateModalOpen && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="migrateModalTitle">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3 id="migrateModalTitle">🔒 In-Place Migration to AES-256 Storage</h3>
+              <button type="button" className="modal-close-btn" onClick={() => setIsMigrateModalOpen(false)}>×</button>
+            </div>
+            <form onSubmit={handleMigrateToEncrypted} className="modal-form">
+              <p className="modal-intro">
+                All existing inventory, sales records, and collector data will be encrypted in place using AES-GCM-256 (PBKDF2 100,000 iterations).
+                All residual plaintext records and staging caches will be completely wiped from disk.
+              </p>
+
+              <div className="form-field">
+                <label htmlFor="migPass">Create Master Vault Passphrase (min 8 characters) *</label>
+                <input
+                  id="migPass"
+                  type="password"
+                  required
+                  value={migratePassphrase}
+                  onChange={(e) => setMigratePassphrase(e.target.value)}
+                  placeholder="Enter a strong master passphrase"
+                />
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="migConfirm">Confirm Master Passphrase *</label>
+                <input
+                  id="migConfirm"
+                  type="password"
+                  required
+                  value={migrateConfirm}
+                  onChange={(e) => setMigrateConfirm(e.target.value)}
+                  placeholder="Re-enter master passphrase"
+                />
+              </div>
+
+              {migrateError && <div className="error-text">⚠️ {migrateError}</div>}
+
+              <div className="modal-footer-actions">
+                <button type="button" className="btn btn-secondary" onClick={() => setIsMigrateModalOpen(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Encrypt Storage in Place
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Return to Standard Mode Modal */}
+      {isDisableModalOpen && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="disableModalTitle">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3 id="disableModalTitle">🔓 Return to Standard Local Storage</h3>
+              <button type="button" className="modal-close-btn" onClick={() => setIsDisableModalOpen(false)}>×</button>
+            </div>
+            <form onSubmit={handleMigrateToStandard} className="modal-form">
+              <p className="modal-intro">
+                Enter your current master vault passphrase to decrypt your workspace and store it in standard local sandbox mode.
+              </p>
+
+              <div className="form-field">
+                <label htmlFor="disPass">Current Vault Passphrase *</label>
+                <input
+                  id="disPass"
+                  type="password"
+                  required
+                  value={disablePassphrase}
+                  onChange={(e) => setDisablePassphrase(e.target.value)}
+                  placeholder="Enter vault passphrase"
+                />
+              </div>
+
+              {disableError && <div className="error-text">⚠️ {disableError}</div>}
+
+              <div className="modal-footer-actions">
+                <button type="button" className="btn btn-secondary" onClick={() => setIsDisableModalOpen(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Decrypt & Switch Mode
                 </button>
               </div>
             </form>

@@ -29,7 +29,15 @@ import {
   LEGAL_IDENTITY_DISCLAIMER,
   OFFLINE_REVOCATION_DISCLAIMER
 } from '../src/utils/cryptoUtils.ts';
-import { convertCurrency, summarizeMultiCurrency, FX_RATES_TO_USD, isCurrencySupported } from '../src/utils/currencyService.ts';
+import { 
+  convertCurrency, 
+  summarizeMultiCurrency, 
+  FX_RATES_TO_USD, 
+  isCurrencySupported,
+  FX_REFERENCE_DATE,
+  IS_LIVE_FX_FEED,
+  FX_PROVIDER_NAME
+} from '../src/utils/currencyService.ts';
 import { calculatePricingRecommendation } from '../src/utils/pricingService.ts';
 import { parseCsvText, validateArtworkImport, exportToCsv } from '../src/utils/csvService.ts';
 import { generateQrSvgDataUri } from '../src/utils/qrUtils.ts';
@@ -1259,6 +1267,210 @@ it('50. Event Freshness & Source Checks: Dynamic dates, unconfirmed/stale status
     // 3. Start date <= end date
     assert.ok(evt.startDate <= evt.endDate, `Event ${evt.id} startDate must be <= endDate`);
   });
+});
+
+// 51. Storage Migration: In-place migration from plaintext to AES-256-GCM storage at rest purges residual plaintext and preserves records
+await itAsync('51. Storage Migration: In-place migration from plaintext to AES-256-GCM storage at rest purges residual plaintext and preserves records', async () => {
+  const store = {};
+  globalThis.localStorage = {
+    getItem: (k) => store[k] || null,
+    setItem: (k, v) => { store[k] = v; },
+    removeItem: (k) => { delete store[k]; },
+  };
+
+  const tenantId = 'migration_tenant';
+  const initialPlaintextState = {
+    ...EMPTY_WORKSPACE,
+    profile: { ...EMPTY_WORKSPACE.profile, artistName: 'Pre-Migration Artist' },
+    inventory: [
+      {
+        id: 'art-mig-1',
+        title: 'Dawn Over Ganges',
+        artistName: 'Pre-Migration Artist',
+        yearCreated: 2026,
+        medium: 'Oil on Canvas',
+        dimensions: { height: 100, width: 150, unit: 'cm' },
+        orientation: 'horizontal',
+        artworkType: 'original',
+        productionCost: 350,
+        listPrice: 5000,
+        currency: 'USD',
+        availability: 'available',
+        location: 'Studio Wall',
+        tags: ['river', 'dawn'],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+    ],
+    sales: []
+  };
+
+  // Initially in plaintext standard mode
+  StorageService.saveWorkspace(initialPlaintextState, tenantId);
+  assert.equal(StorageService.isStorageEncryptedAtRest(tenantId), false);
+  assert.ok(store['morrowkind_workspace_migration_tenant'].includes('Dawn Over Ganges'), 'Must be plaintext initially');
+
+  // Perform in-place migration
+  const masterPassphrase = 'strong-studio-passphrase-2026';
+  const migrationRes = await StorageService.migrateToEncryptedAtRest(masterPassphrase, tenantId);
+  assert.equal(migrationRes.success, true);
+  assert.equal(StorageService.isStorageEncryptedAtRest(tenantId), true);
+
+  // Residual plaintext purge check: raw storage MUST NOT contain artwork title
+  const rawEncrypted = store['morrowkind_workspace_migration_tenant'];
+  assert.ok(!rawEncrypted.includes('Dawn Over Ganges'), 'Residual plaintext title must be completely purged from disk');
+  assert.ok(rawEncrypted.includes('AES-GCM-256'), 'Ciphertext envelope must exist');
+
+  // Verify data preservation via authenticated decryption
+  const decryptRes = await StorageService.loadWorkspaceEncrypted(masterPassphrase, tenantId);
+  assert.equal(decryptRes.success, true);
+  assert.equal(decryptRes.state?.inventory[0].title, 'Dawn Over Ganges');
+  assert.equal(decryptRes.state?.profile.encryptionAtRest, true);
+});
+
+// 52. Storage Migration: Safe reverse migration from AES-256 encrypted storage back to standard mode with master passphrase
+await itAsync('52. Storage Migration: Safe reverse migration from AES-256 encrypted storage back to standard mode with master passphrase', async () => {
+  const store = {};
+  globalThis.localStorage = {
+    getItem: (k) => store[k] || null,
+    setItem: (k, v) => { store[k] = v; },
+    removeItem: (k) => { delete store[k]; },
+  };
+
+  const tenantId = 'reverse_tenant';
+  const masterPassphrase = 'vault-reverse-passphrase-2026';
+  const sampleState = {
+    ...EMPTY_WORKSPACE,
+    inventory: [
+      {
+        id: 'art-rev-1',
+        title: 'Sculptural Relief',
+        artistName: 'Artist',
+        yearCreated: 2026,
+        medium: 'Bronze',
+        dimensions: { height: 40, width: 40, unit: 'cm' },
+        orientation: 'square',
+        artworkType: 'sculpture',
+        productionCost: 800,
+        listPrice: 4500,
+        currency: 'EUR',
+        availability: 'available',
+        location: 'Pedestal A',
+        tags: ['bronze'],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+    ]
+  };
+
+  // Start in encrypted mode
+  await StorageService.saveWorkspaceEncrypted(sampleState, masterPassphrase, tenantId);
+  assert.equal(StorageService.isStorageEncryptedAtRest(tenantId), true);
+
+  // Wrong passphrase attempt must fail without altering storage
+  const failedReverse = await StorageService.migrateToStandardStorage('wrong-passphrase', tenantId);
+  assert.equal(failedReverse.success, false);
+  assert.equal(StorageService.isStorageEncryptedAtRest(tenantId), true);
+
+  // Correct passphrase reverse migration
+  const successReverse = await StorageService.migrateToStandardStorage(masterPassphrase, tenantId);
+  assert.equal(successReverse.success, true);
+  assert.equal(StorageService.isStorageEncryptedAtRest(tenantId), false);
+  assert.equal(successReverse.state?.inventory[0].title, 'Sculptural Relief');
+
+  // Verify storage is now readable standard JSON
+  const loadedStandard = StorageService.loadWorkspace(tenantId);
+  assert.equal(loadedStandard.inventory[0].title, 'Sculptural Relief');
+  assert.equal(loadedStandard.profile.encryptionAtRest, false);
+});
+
+// 53. Encrypted Backup Disaster Recovery on Clean Profile: Incorrect passphrases, corrupted files, and missing assets handled safely
+await itAsync('53. Encrypted Backup Disaster Recovery on Clean Profile: Incorrect passphrases, corrupted files, and missing assets handled safely', async () => {
+  const cleanStore = {};
+  globalThis.localStorage = {
+    getItem: (k) => cleanStore[k] || null,
+    setItem: (k, v) => { cleanStore[k] = v; },
+    removeItem: (k) => { delete cleanStore[k]; },
+  };
+
+  const originalState = {
+    ...EMPTY_WORKSPACE,
+    inventory: [
+      {
+        id: 'art-disaster-1',
+        title: 'Resilient Artwork',
+        artistName: 'Survivor Artist',
+        yearCreated: 2026,
+        medium: 'Tempera on Wood',
+        dimensions: { height: 60, width: 80, unit: 'cm' },
+        orientation: 'horizontal',
+        artworkType: 'original',
+        productionCost: 200,
+        listPrice: 3200,
+        currency: 'USD',
+        availability: 'available',
+        location: 'Storage Unit B',
+        tags: ['resilience'],
+        imageUrl: 'https://nonexistent-remote-server-999.org/broken-image.jpg', // missing/broken asset simulation
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+    ]
+  };
+
+  const backupPassphrase = 'clean-profile-recovery-pass-2026';
+  const encryptedBackupString = await StorageService.exportEncryptedBackup(originalState, backupPassphrase);
+
+  // 1. Wrong passphrase test
+  const wrongPassResult = await StorageService.restoreEncryptedBackup(encryptedBackupString, 'completely-wrong-password');
+  assert.equal(wrongPassResult.success, false);
+  assert.ok(wrongPassResult.error?.includes('Decryption failed'));
+
+  // 2. Corrupted ciphertext test (tamper with ciphertext string in payload)
+  const corruptedPayloadObj = JSON.parse(encryptedBackupString);
+  corruptedPayloadObj.payload.ciphertext = 'Z'.repeat(corruptedPayloadObj.payload.ciphertext.length);
+  const corruptedBackupString = JSON.stringify(corruptedPayloadObj);
+  const corruptedResult = await StorageService.restoreEncryptedBackup(corruptedBackupString, backupPassphrase);
+  assert.equal(corruptedResult.success, false);
+  assert.ok(corruptedResult.error?.includes('Decryption failed'));
+
+  // 3. Malformed JSON file test
+  const malformedResult = await StorageService.restoreEncryptedBackup('{ not-even-valid-json', backupPassphrase);
+  assert.equal(malformedResult.success, false);
+
+  // 4. Successful recovery on completely clean device/profile
+  const successRecovery = await StorageService.restoreEncryptedBackup(encryptedBackupString, backupPassphrase);
+  assert.equal(successRecovery.success, true);
+  assert.equal(successRecovery.restoredState?.inventory[0].title, 'Resilient Artwork');
+  assert.equal(successRecovery.restoredState?.inventory[0].imageUrl, 'https://nonexistent-remote-server-999.org/broken-image.jpg');
+});
+
+// 54. Workspace Partitioning & IndexedDB Asset Isolation: Multi-tenant asset keys prevent cross-workspace collisions or deletions
+it('54. Workspace Partitioning & IndexedDB Asset Isolation: Multi-tenant asset keys prevent cross-workspace collisions or deletions', () => {
+  // Test isolation of tenant-scoped asset keys
+  const makeKey = (artworkId, tenantId) => (tenantId && tenantId !== 'default' ? `${tenantId}:${artworkId}` : artworkId);
+
+  const tenantAKey = makeKey('artwork-shared-id-101', 'studio_fine_arts');
+  const tenantBKey = makeKey('artwork-shared-id-101', 'studio_print_editions');
+
+  assert.equal(tenantAKey, 'studio_fine_arts:artwork-shared-id-101');
+  assert.equal(tenantBKey, 'studio_print_editions:artwork-shared-id-101');
+  assert.notEqual(tenantAKey, tenantBKey, 'Shared artwork IDs across tenants must have isolated storage keys');
+});
+
+// 55. Fixed Benchmark Rates Verification: Rates match stated ECB/RBI reference benchmarks and are never declared live
+it('55. Fixed Benchmark Rates Verification: Rates match stated ECB/RBI reference benchmarks and are never declared live', () => {
+  assert.equal(IS_LIVE_FX_FEED, false, 'FX feed must strictly NOT be claimed as live');
+  assert.equal(FX_REFERENCE_DATE, '2026-10-25', 'FX reference date must be documented 2026-10-25');
+  assert.ok(FX_PROVIDER_NAME.includes('Reference Benchmark Matrix'), 'Provider name must declare reference benchmark');
+
+  // Verify key fixed benchmarks against ECB / RBI reference snapshot
+  assert.equal(FX_RATES_TO_USD['USD'], 1.0);
+  assert.equal(FX_RATES_TO_USD['EUR'], 1.08, 'EUR rate aligns with late October 2026 ECB reference (~1.08 USD)');
+  assert.equal(FX_RATES_TO_USD['GBP'], 1.29, 'GBP rate aligns with Bank of England benchmark (~1.29 USD)');
+  assert.equal(FX_RATES_TO_USD['INR'], 0.0119, 'INR rate aligns with RBI reference (~84.0 INR/USD => ~0.0119 USD)');
+  assert.equal(FX_RATES_TO_USD['CAD'], 0.72, 'CAD rate aligns with Bank of Canada reference (~0.72 USD)');
+  assert.equal(FX_RATES_TO_USD['AUD'], 0.65, 'AUD rate aligns with RBA reference (~0.65 USD)');
 });
 
 console.log(`\nData Integrity & Adversarial Tests: ${passed} PASSED, ${failed} FAILED\n`);

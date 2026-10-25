@@ -107,6 +107,86 @@ export class StorageService {
   }
 
   /**
+   * Migrate existing plaintext workspace storage to AES-256-GCM encrypted storage in place
+   * Safely encrypts state, verifies ciphertext write, and wipes all residual plaintext.
+   */
+  static async migrateToEncryptedAtRest(
+    passphrase: string,
+    tenantId = 'default'
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      if (!passphrase || passphrase.length < 8) {
+        return { success: false, error: 'Master passphrase must be at least 8 characters long.' };
+      }
+
+      if (StorageService.isStorageEncryptedAtRest(tenantId)) {
+        return { success: false, error: 'Storage is already encrypted at rest for this workspace.' };
+      }
+
+      const currentState = StorageService.loadWorkspace(tenantId);
+      const migratedState: ArtistWorkspaceState = {
+        ...currentState,
+        profile: {
+          ...currentState.profile,
+          encryptionAtRest: true,
+          vaultProtected: true,
+        }
+      };
+
+      const saveRes = await StorageService.saveWorkspaceEncrypted(migratedState, passphrase, tenantId);
+      if (!saveRes.success) {
+        return { success: false, error: saveRes.error || 'Failed to encrypt storage' };
+      }
+
+      // Purge staging and verify raw storage contains only ciphertext
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem(STAGING_KEY);
+        const key = StorageService.getStorageKey(tenantId);
+        const stored = localStorage.getItem(key);
+        if (!stored || !stored.includes('AES-GCM-256')) {
+          return { success: false, error: 'Verification failed: ciphertext was not written properly.' };
+        }
+      }
+
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Migration to encrypted storage failed.' };
+    }
+  }
+
+  /**
+   * Migrate from AES-256-GCM encrypted storage back to standard unencrypted local storage
+   */
+  static async migrateToStandardStorage(
+    passphrase: string,
+    tenantId = 'default'
+  ): Promise<{ success: boolean; state?: ArtistWorkspaceState; error?: string }> {
+    try {
+      const loadRes = await StorageService.loadWorkspaceEncrypted(passphrase, tenantId);
+      if (!loadRes.success || !loadRes.state) {
+        return { success: false, error: loadRes.error || 'Failed to decrypt workspace with provided passphrase.' };
+      }
+
+      const standardState: ArtistWorkspaceState = {
+        ...loadRes.state,
+        profile: {
+          ...loadRes.state.profile,
+          encryptionAtRest: false,
+        }
+      };
+
+      const saveRes = StorageService.saveWorkspace(standardState, tenantId);
+      if (!saveRes.success) {
+        return { success: false, error: saveRes.error || 'Failed to save standard workspace' };
+      }
+
+      return { success: true, state: standardState };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Migration to standard storage failed.' };
+    }
+  }
+
+  /**
    * Load workspace from AES-GCM-256 encrypted-at-rest storage using master passphrase
    */
   static async loadWorkspaceEncrypted(

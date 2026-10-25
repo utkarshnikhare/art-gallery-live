@@ -58,6 +58,10 @@ function formatBytes(bytes: number): string {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
 }
 
+function makeAssetKey(artworkId: string, tenantId?: string): string {
+  return tenantId && tenantId !== 'default' ? `${tenantId}:${artworkId}` : artworkId;
+}
+
 export class IndexedDbService {
   /**
    * Check real browser storage quota and utilization via StorageManager API
@@ -93,17 +97,23 @@ export class IndexedDbService {
   }
 
   /**
-   * Store high-resolution artwork image asset in IndexedDB with quota error handling
+   * Store high-resolution artwork image asset in IndexedDB with tenant isolation and quota error handling
    */
-  static async saveArtworkImage(artworkId: string, dataUriOrUrl: string): Promise<{ success: boolean; error?: string }> {
+  static async saveArtworkImage(
+    artworkId: string, 
+    dataUriOrUrl: string, 
+    tenantId = 'default'
+  ): Promise<{ success: boolean; error?: string }> {
     const db = await openDatabase();
     if (!db) return { success: false, error: 'IndexedDB is unavailable in this environment' };
+
+    const key = makeAssetKey(artworkId, tenantId);
 
     return new Promise((resolve) => {
       try {
         const transaction = db.transaction([STORE_IMAGES], 'readwrite');
         const store = transaction.objectStore(STORE_IMAGES);
-        store.put({ id: artworkId, asset: dataUriOrUrl, updatedAt: new Date().toISOString() });
+        store.put({ id: key, asset: dataUriOrUrl, updatedAt: new Date().toISOString() });
         transaction.oncomplete = () => resolve({ success: true });
         transaction.onerror = (e: any) => {
           const err = e.target.error;
@@ -120,19 +130,34 @@ export class IndexedDbService {
   }
 
   /**
-   * Retrieve artwork image asset from IndexedDB
+   * Retrieve artwork image asset from IndexedDB with tenant-scoped isolation
    */
-  static async getArtworkImage(artworkId: string): Promise<string | null> {
+  static async getArtworkImage(artworkId: string, tenantId = 'default'): Promise<string | null> {
     const db = await openDatabase();
     if (!db) return null;
+
+    const key = makeAssetKey(artworkId, tenantId);
 
     return new Promise((resolve) => {
       try {
         const transaction = db.transaction([STORE_IMAGES], 'readonly');
         const store = transaction.objectStore(STORE_IMAGES);
-        const req = store.get(artworkId);
+        const req = store.get(key);
         req.onsuccess = () => {
-          resolve(req.result ? req.result.asset : null);
+          if (req.result && req.result.asset) {
+            resolve(req.result.asset);
+            return;
+          }
+          // Fallback check for unnamespaced legacy key
+          if (tenantId !== 'default') {
+            const fallbackReq = store.get(artworkId);
+            fallbackReq.onsuccess = () => {
+              resolve(fallbackReq.result ? fallbackReq.result.asset : null);
+            };
+            fallbackReq.onerror = () => resolve(null);
+            return;
+          }
+          resolve(null);
         };
         req.onerror = () => resolve(null);
       } catch (err) {
@@ -142,17 +167,19 @@ export class IndexedDbService {
   }
 
   /**
-   * Delete artwork asset safely without corrupting other records
+   * Delete artwork asset safely without corrupting other workspaces or records
    */
-  static async deleteArtworkImage(artworkId: string): Promise<boolean> {
+  static async deleteArtworkImage(artworkId: string, tenantId = 'default'): Promise<boolean> {
     const db = await openDatabase();
     if (!db) return false;
+
+    const key = makeAssetKey(artworkId, tenantId);
 
     return new Promise((resolve) => {
       try {
         const transaction = db.transaction([STORE_IMAGES], 'readwrite');
         const store = transaction.objectStore(STORE_IMAGES);
-        store.delete(artworkId);
+        store.delete(key);
         transaction.oncomplete = () => resolve(true);
         transaction.onerror = () => resolve(false);
       } catch (err) {

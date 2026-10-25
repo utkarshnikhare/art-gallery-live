@@ -3478,4 +3478,37 @@ body {
   color: #1e293b;
 }
 
+.cert-identity-pill {
+  background: #fefce8;
+  border: 1px solid #fef08a;
+  color: #854d0e;
+  font-size: 0.68rem;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.storage-mode-control-box {
+  background: var(--bg-warm);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.storage-mode-status {
+  margin: 6px 0 10px 0;
+}
+
+.pill-standard {
+  background: #e2e8f0;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+}
+
+.migration-actions-row {
+  margin-top: 10px;
+}
+
 

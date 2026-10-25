@@ -137,11 +137,17 @@ export const CertificatesView: React.FC<CertificatesViewProps> = ({
       <div className="legal-truth-banner">
         <span className="banner-icon" aria-hidden="true">📜</span>
         <div className="banner-body">
-          <strong>Authenticity & Legal Distinction Standard:</strong>
+          <strong>Cryptographic Trust & Identity Separation Standard:</strong>
           <p>
-            Morrowkind uses industry-standard <strong>SHA-256 cryptographic hashing</strong> to freeze artwork metadata
-            against alteration. A digital certificate establishes immutable cryptographic provenance at a point in time;
-            it is not an automatic substitute for formal legal title or statutory copyright registration.
+            Morrowkind strictly separates four distinct concepts:
+            <br />
+            <strong>1. Payload Integrity & Digital Signature:</strong> Mathematical proof via SHA-256 and ECDSA P-256 that recorded attributes match the private key.
+            <br />
+            <strong>2. Creator Identity:</strong> A self-issued studio key does NOT establish real-world legal identity by itself without independent Certificate Authority (CA) verification.
+            <br />
+            <strong>3. Revocation Status:</strong> Current revocation status requires an online registry query; offline QR proofs cannot guarantee subsequent revocation.
+            <br />
+            <strong>4. Legal Ownership:</strong> Cryptographic attestation is an immutable record of studio issuance and does not constitute statutory copyright or title deed.
           </p>
         </div>
       </div>
@@ -215,6 +221,10 @@ export const CertificatesView: React.FC<CertificatesViewProps> = ({
                       <code>{cert.ecdsaSignature.slice(0, 32)}...</code>
                     </div>
                   )}
+
+                  <div className="cert-identity-pill">
+                    <span>🛡️ Issuer Identity: Self-Issued Studio Key (CA-Unverified)</span>
+                  </div>
 
                   {/* Offline SVG QR Code Preview */}
                   <div className="cert-qr-container">
