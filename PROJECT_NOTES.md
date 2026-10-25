@@ -95,7 +95,23 @@
 
 ---
 
-## 4. Test Suite Execution Results
+## 5. Live Production Deployment & Verification Audit
+
+- **Repository**: [https://github.com/utkarshnikhare/art-gallery-live](https://github.com/utkarshnikhare/art-gallery-live)
+- **Public URL**: [https://utkarshnikhare.github.io/art-gallery-live/](https://utkarshnikhare.github.io/art-gallery-live/)
+- **Initial Commit SHA**: `b639cbedd78a99df2fc4233d03c1f8cff238f9cd`
+- **Daily Ingestion Pipeline Run SHA**: `35b6ecf`
+- **GitHub Actions Deploy Run**: `40175856487` (Status: SUCCESS, Deploy to GitHub Pages)
+- **GitHub Actions Ingestion Run**: `40176008763` (Status: SUCCESS, sync-events passed in 12s)
+
+### Live Browser Audit Findings (`scripts/verify_live_deployment.mjs`):
+1. **HTTP Status**: 200 OK on both `index.html` and `public/data/events.json`.
+2. **Console Errors**: 0 console errors in live browser environment.
+3. **Card Rendering**: 18 verified cards rendered from production `events.json`.
+4. **Desktop Layout**: Verified at 1366×768 with clean 3-column responsive grid and zero layout glitches.
+5. **Mobile Layout**: Verified at 390×844 with single-column stack, comfortable touch targets, and strictly zero horizontal overflow.
+6. **Live Interactions**: Interactive search ("Pune" narrowed to 5 cards), modal view opened/closed without issues, and external links point to authentic institutions.
+
 
 ### Unit & Integration Tests (`tests/unit.test.mjs`)
 - **Total Tests**: 16
