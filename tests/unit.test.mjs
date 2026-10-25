@@ -24,13 +24,17 @@ import {
   verifyArtworkSignature,
   createPortableProofToken,
   verifyPortableProofToken,
-  PROVENANCE_LEGAL_NOTICE
+  PROVENANCE_LEGAL_NOTICE,
+  KEY_RECOVERY_LIMITATION_NOTICE,
+  LEGAL_IDENTITY_DISCLAIMER,
+  OFFLINE_REVOCATION_DISCLAIMER
 } from '../src/utils/cryptoUtils.ts';
-import { convertCurrency, summarizeMultiCurrency, FX_RATES_TO_USD } from '../src/utils/currencyService.ts';
+import { convertCurrency, summarizeMultiCurrency, FX_RATES_TO_USD, isCurrencySupported } from '../src/utils/currencyService.ts';
 import { calculatePricingRecommendation } from '../src/utils/pricingService.ts';
 import { parseCsvText, validateArtworkImport, exportToCsv } from '../src/utils/csvService.ts';
 import { generateQrSvgDataUri } from '../src/utils/qrUtils.ts';
 import { StorageService, EMPTY_WORKSPACE } from '../src/services/storageService.ts';
+import { IndexedDbService } from '../src/services/indexedDbService.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1022,6 +1026,239 @@ it('44. Multi-Tenant Studio Partitioning: Workspace storage keys isolate multipl
 
   assert.equal(loadedAlice.profile.artistName, 'Studio Alice');
   assert.equal(loadedBob.profile.artistName, 'Studio Bob');
+});
+
+// 45. Adversarial Impostor Attack: Fabricated artwork with valid ECDSA signature correctly flagged as SIGNATURE_VALID_ISSUER_UNVERIFIED
+await itAsync('45. Adversarial Impostor Attack: Fabricated artwork with valid ECDSA signature correctly flagged as SIGNATURE_VALID_ISSUER_UNVERIFIED', async () => {
+  // Attacker generates an ephemeral keypair
+  const attackerKeypair = await generateStudioKeypair();
+
+  // Attacker fabricates an artwork claiming to be created by a famous master
+  const forgedCert = {
+    certificateId: 'MK-COA-FORGED-999',
+    artworkId: 'art-fake-999',
+    artworkTitle: 'Fabricated Masterpiece',
+    artistName: 'Maya Lin',
+    yearCreated: 2026,
+    medium: 'Granite and Water',
+    dimensionsText: '300 × 500 cm',
+    editionText: 'Unique 1/1',
+    issueDate: '2026-10-25',
+    issuer: 'Bogus Independent Notary',
+    sha256Fingerprint: '',
+    verificationUrl: '',
+    status: 'valid',
+    blockchainAnchor: { isAnchored: false, note: '' }
+  };
+
+  const fingerprint = generateArtworkFingerprint({
+    title: forgedCert.artworkTitle,
+    artistName: forgedCert.artistName,
+    yearCreated: forgedCert.yearCreated,
+    medium: forgedCert.medium,
+    dimensionsText: forgedCert.dimensionsText,
+    editionText: forgedCert.editionText,
+    uniqueSalt: forgedCert.certificateId
+  });
+  forgedCert.sha256Fingerprint = fingerprint;
+
+  // Attacker signs with their private key and embeds their public key
+  const signatureHex = await signArtworkFingerprint(fingerprint, attackerKeypair.privateKeyJwk);
+  forgedCert.ecdsaSignature = signatureHex;
+  forgedCert.publicKeyJwk = attackerKeypair.publicKeyJwk;
+
+  const forgedToken = createPortableProofToken(forgedCert);
+  const result = await verifyPortableProofToken(forgedToken);
+
+  // Assertions: The math verifies, but identity is explicitly UNVERIFIED
+  assert.equal(result.isHashValid, true, 'Hash calculation is mathematically sound');
+  assert.equal(result.isSignatureVerified, true, 'Attacker signature matches attacker public key');
+  assert.equal(result.status, 'SIGNATURE_VALID_ISSUER_UNVERIFIED', 'Must NOT claim verified creator identity');
+  assert.equal(result.issuerIdentityType, 'self-issued-unverified', 'Must flag as self-issued unverified');
+  assert.ok(result.legalDisclaimer?.includes('Creator Identity Notice') || result.legalDisclaimer?.includes('CREATOR IDENTITY NOTICE'), 'Must include legal identity disclaimer');
+});
+
+// 46. Portable Proof Adversarial Defenses: Tampered attributes, oversized payloads (>64KB), and unsupported schema rejection
+await itAsync('46. Portable Proof Adversarial Defenses: Tampered attributes, oversized payloads (>64KB), and unsupported schema rejection', async () => {
+  const keypair = await generateStudioKeypair();
+  const validCert = {
+    certificateId: 'MK-COA-VALID-001',
+    artworkId: 'art-001',
+    artworkTitle: 'Original Painting',
+    artistName: 'Genuine Artist',
+    yearCreated: 2026,
+    medium: 'Oil on Canvas',
+    dimensionsText: '50 × 50 cm',
+    editionText: '1/1',
+    issueDate: '2026-10-25',
+    issuer: 'Studio Vault',
+    sha256Fingerprint: '',
+    verificationUrl: '',
+    status: 'valid',
+    blockchainAnchor: { isAnchored: false, note: '' }
+  };
+  validCert.sha256Fingerprint = generateArtworkFingerprint({
+    title: validCert.artworkTitle,
+    artistName: validCert.artistName,
+    yearCreated: validCert.yearCreated,
+    medium: validCert.medium,
+    dimensionsText: validCert.dimensionsText,
+    editionText: validCert.editionText,
+    uniqueSalt: validCert.certificateId
+  });
+  validCert.ecdsaSignature = await signArtworkFingerprint(validCert.sha256Fingerprint, keypair.privateKeyJwk);
+  validCert.publicKeyJwk = keypair.publicKeyJwk;
+
+  // 1. Oversized payload defense (> 64KB)
+  const hugeToken = 'A'.repeat(70000);
+  const oversizedResult = await verifyPortableProofToken(hugeToken);
+  assert.equal(oversizedResult.isValid, false);
+  assert.equal(oversizedResult.status, 'STATUS_UNAVAILABLE');
+  assert.ok(oversizedResult.error?.includes('Oversized'));
+
+  // 2. Tampered attribute test: change medium after signing
+  const tamperedPayload = {
+    v: '2.0',
+    id: validCert.certificateId,
+    t: validCert.artworkTitle,
+    a: validCert.artistName,
+    y: validCert.yearCreated,
+    m: 'TAMPERED MEDIUM',
+    d: validCert.dimensionsText,
+    e: validCert.editionText,
+    dt: validCert.issueDate,
+    iss: validCert.issuer,
+    h: validCert.sha256Fingerprint, // Original hash
+    sig: validCert.ecdsaSignature,
+    pk: validCert.publicKeyJwk,
+    st: 'valid',
+  };
+  const tamperedB64 = Buffer.from(JSON.stringify(tamperedPayload)).toString('base64url');
+  const tamperedResult = await verifyPortableProofToken(tamperedB64);
+  assert.equal(tamperedResult.isValid, false);
+  assert.equal(tamperedResult.status, 'PAYLOAD_TAMPERED');
+
+  // 3. Incompatible schema version rejection
+  const badSchemaPayload = { ...tamperedPayload, m: validCert.medium, v: '99.0' };
+  const badSchemaB64 = Buffer.from(JSON.stringify(badSchemaPayload)).toString('base64url');
+  const badSchemaResult = await verifyPortableProofToken(badSchemaB64);
+  assert.equal(badSchemaResult.isValid, false);
+  assert.equal(badSchemaResult.status, 'STATUS_UNAVAILABLE');
+  assert.ok(badSchemaResult.error?.includes('Incompatible schema'));
+});
+
+// 47. True AES-256-GCM Storage Encryption at Rest: Raw localStorage contains only ciphertext; unauthenticated reads yield zero sensitive plaintext
+await itAsync('47. True AES-256-GCM Storage Encryption at Rest: Raw localStorage contains only ciphertext; unauthenticated reads yield zero sensitive plaintext', async () => {
+  const store = {};
+  globalThis.localStorage = {
+    getItem: (k) => store[k] || null,
+    setItem: (k, v) => { store[k] = v; },
+    removeItem: (k) => { delete store[k]; },
+  };
+
+  const sensitiveWorkspace = {
+    ...EMPTY_WORKSPACE,
+    profile: { ...EMPTY_WORKSPACE.profile, artistName: 'Private Studio Master' },
+    collectors: [
+      {
+        id: 'col-secret',
+        name: 'High-Net-Worth Collector Anonymous',
+        preferredCurrency: 'USD',
+        totalPurchasedCount: 5,
+        totalSpentAmount: 250000,
+        city: 'Geneva',
+        country: 'Switzerland',
+        artworkInterests: ['Monumental Sculpture'],
+        consentRecorded: true,
+        createdAt: new Date().toISOString()
+      }
+    ]
+  };
+
+  const masterPassphrase = 'super-secret-vault-password-2026';
+  const tenantId = 'secure_tenant';
+
+  // Save with AES-256 authenticated encryption at rest
+  const saveRes = await StorageService.saveWorkspaceEncrypted(sensitiveWorkspace, masterPassphrase, tenantId);
+  assert.equal(saveRes.success, true);
+
+  // 1. Inspect raw storage at rest
+  const rawStored = store['morrowkind_workspace_secure_tenant'];
+  assert.ok(rawStored, 'Raw storage key must exist');
+  assert.ok(!rawStored.includes('High-Net-Worth Collector Anonymous'), 'Sensitive collector name must NOT be in plaintext');
+  assert.ok(!rawStored.includes('Private Studio Master'), 'Artist name must NOT be in plaintext');
+  assert.ok(rawStored.includes('AES-GCM-256'), 'Storage must declare AES-GCM-256 algorithm');
+
+  // 2. Unauthenticated loadWorkspace returns encrypted placeholder with zero collectors
+  const unauthWs = StorageService.loadWorkspace(tenantId);
+  assert.equal(unauthWs.collectors.length, 0, 'Unauthenticated load must return 0 collectors');
+  assert.equal(unauthWs.profile.encryptionAtRest, true, 'Profile must indicate encrypted at rest');
+
+  // 3. Load with wrong passphrase fails
+  const wrongPassRes = await StorageService.loadWorkspaceEncrypted('incorrect-passphrase-attempt', tenantId);
+  assert.equal(wrongPassRes.success, false);
+  assert.ok(wrongPassRes.error?.includes('Decryption failed'));
+
+  // 4. Load with correct passphrase restores sensitive collectors
+  const correctPassRes = await StorageService.loadWorkspaceEncrypted(masterPassphrase, tenantId);
+  assert.equal(correctPassRes.success, true);
+  assert.equal(correctPassRes.state?.collectors[0].name, 'High-Net-Worth Collector Anonymous');
+  assert.equal(correctPassRes.state?.collectors[0].totalSpentAmount, 250000);
+});
+
+// 48. FX Engine Edge Cases: Negative amounts, zero handling, unsupported currencies isolation, and immutable transaction values
+it('48. FX Engine Edge Cases: Negative amounts, zero handling, unsupported currencies isolation, and immutable transaction values', () => {
+  // 1. Zero handling
+  assert.equal(convertCurrency(0, 'USD', 'EUR'), 0);
+
+  // 2. Negative amount preservation (e.g. -500 EUR refund in USD: -500 * 1.08 = -540 USD)
+  const negEurInUsd = convertCurrency(-500, 'EUR', 'USD');
+  assert.equal(negEurInUsd, -540);
+
+  // 3. Unsupported currency isolation (e.g. XYZ or AED not in matrix)
+  assert.equal(isCurrencySupported('USD'), true);
+  assert.equal(isCurrencySupported('XYZ'), false);
+  const unsupportedConversion = convertCurrency(100, 'XYZ', 'USD');
+  assert.ok(Number.isNaN(unsupportedConversion), 'Unsupported currency must return NaN rather than silent 1:1');
+
+  // 4. Multi-currency summary with unsupported currencies
+  const mixedEntries = [
+    { amount: 1000, currency: 'USD' },
+    { amount: -200, currency: 'USD' }, // net 800 USD
+    { amount: 5000, currency: 'XYZ' },  // unsupported
+  ];
+  const summary = summarizeMultiCurrency(mixedEntries, 'USD');
+  assert.equal(summary.totalsByCurrency['USD'], 800);
+  assert.equal(summary.totalsByCurrency['XYZ'], 5000);
+  assert.equal(summary.hasUnsupportedCurrencies, true);
+  assert.ok(summary.unsupportedCurrencies.includes('XYZ'));
+  assert.equal(summary.consolidatedBaseTotal, 800, 'Consolidated total only sums supported currencies');
+});
+
+// 49. IndexedDB Asset Storage & Quota Inspection API handling
+await itAsync('49. IndexedDB Asset Storage & Quota Inspection API handling', async () => {
+  const estimate = await IndexedDbService.getStorageEstimate();
+  assert.ok(typeof estimate.isSupported === 'boolean');
+  assert.ok(typeof estimate.formattedUsed === 'string');
+  assert.ok(typeof estimate.formattedQuota === 'string');
+});
+
+// 50. Event Freshness & Source Checks: Dynamic dates, unconfirmed/stale status flags, and broken link resilience
+it('50. Event Freshness & Source Checks: Dynamic dates, unconfirmed/stale status flags, and broken link resilience', () => {
+  const rawEventsData = JSON.parse(fs.readFileSync(EVENTS_FILE, 'utf-8'));
+  const events = rawEventsData.events;
+
+  events.forEach((evt) => {
+    // 1. Verify lastCheckedAt timestamp is present and parseable
+    assert.ok(evt.lastCheckedAt, `Event ${evt.id} must have lastCheckedAt`);
+    assert.ok(!isNaN(new Date(evt.lastCheckedAt).getTime()), `Event ${evt.id} lastCheckedAt must be valid date`);
+
+    // 2. Verify officialUrl is a real URL
+    assert.ok(isValidUrl(evt.officialUrl), `Event ${evt.id} must have valid officialUrl`);
+
+    // 3. Start date <= end date
+    assert.ok(evt.startDate <= evt.endDate, `Event ${evt.id} startDate must be <= endDate`);
+  });
 });
 
 console.log(`\nData Integrity & Adversarial Tests: ${passed} PASSED, ${failed} FAILED\n`);

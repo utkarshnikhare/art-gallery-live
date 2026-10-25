@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { DigitalCertificate } from '../types';
-import { verifyPortableProofToken } from '../utils/cryptoUtils';
+import { DigitalCertificate, VerificationOutcome } from '../types';
+import { 
+  verifyPortableProofToken, 
+  LEGAL_IDENTITY_DISCLAIMER, 
+  OFFLINE_REVOCATION_DISCLAIMER, 
+  KEY_RECOVERY_LIMITATION_NOTICE,
+  PROVENANCE_LEGAL_NOTICE
+} from '../utils/cryptoUtils';
 
 interface PublicVerificationModalProps {
   isOpen: boolean;
@@ -18,8 +24,7 @@ export const PublicVerificationModal: React.FC<PublicVerificationModalProps> = (
   const [searchId, setSearchId] = useState(initialCertId);
   const [matchedCert, setMatchedCert] = useState<DigitalCertificate | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
-  const [isPortableProof, setIsPortableProof] = useState(false);
-  const [isSignatureValid, setIsSignatureValid] = useState(false);
+  const [verificationOutcome, setVerificationOutcome] = useState<VerificationOutcome | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -28,25 +33,38 @@ export const PublicVerificationModal: React.FC<PublicVerificationModalProps> = (
 
     if (proofParam) {
       verifyPortableProofToken(proofParam).then((res) => {
-        if (res.isValid && res.cert) {
+        setVerificationOutcome(res);
+        setHasSearched(true);
+        if (res.cert) {
           setMatchedCert(res.cert);
-          setIsSignatureValid(res.isSignatureVerified);
-          setIsPortableProof(true);
-          setHasSearched(true);
           if (res.cert.certificateId) setSearchId(res.cert.certificateId);
-          return;
+        } else {
+          setMatchedCert(null);
         }
       });
+      return;
     }
 
-    if (verifyId && !proofParam) {
+    if (verifyId) {
       setSearchId(verifyId);
       const found = certificates.find(
         (c) => c.certificateId.toLowerCase().trim() === verifyId.toLowerCase().trim()
       );
       if (found) {
         setMatchedCert(found);
-        setIsPortableProof(false);
+        setVerificationOutcome({
+          isValid: found.status === 'valid',
+          status: found.status === 'valid' ? 'PAYLOAD_INTEGRITY_VERIFIED' : 'CERTIFICATE_REVOKED',
+          statusMessage: found.status === 'valid' ? 'Certificate matched in local studio repository.' : 'Certificate is marked revoked in local studio repository.',
+          isHashValid: true,
+          isSignatureVerified: !!found.ecdsaSignature,
+          issuerIdentityType: 'self-issued-unverified',
+          isOfflineProof: false,
+          cert: found,
+          offlineRevocationNotice: OFFLINE_REVOCATION_DISCLAIMER,
+          legalDisclaimer: LEGAL_IDENTITY_DISCLAIMER,
+          keyRecoveryNotice: KEY_RECOVERY_LIMITATION_NOTICE,
+        });
         setHasSearched(true);
       }
     }
@@ -62,20 +80,34 @@ export const PublicVerificationModal: React.FC<PublicVerificationModalProps> = (
     // Check if user entered or pasted a portable proof token
     if (query.length > 50 && (query.includes('-') || query.includes('_') || query.includes('='))) {
       const res = await verifyPortableProofToken(query);
-      if (res.isValid && res.cert) {
-        setMatchedCert(res.cert);
-        setIsSignatureValid(res.isSignatureVerified);
-        setIsPortableProof(true);
-        setHasSearched(true);
-        return;
-      }
+      setVerificationOutcome(res);
+      setMatchedCert(res.cert || null);
+      setHasSearched(true);
+      return;
     }
 
     const found = certificates.find(
       (c) => c.certificateId.toLowerCase().trim() === query.toLowerCase().trim()
     );
-    setMatchedCert(found || null);
-    setIsPortableProof(false);
+    if (found) {
+      setMatchedCert(found);
+      setVerificationOutcome({
+        isValid: found.status === 'valid',
+        status: found.status === 'valid' ? 'PAYLOAD_INTEGRITY_VERIFIED' : 'CERTIFICATE_REVOKED',
+        statusMessage: found.status === 'valid' ? 'Certificate matched in local studio repository.' : 'Certificate is marked revoked in local studio repository.',
+        isHashValid: true,
+        isSignatureVerified: !!found.ecdsaSignature,
+        issuerIdentityType: 'self-issued-unverified',
+        isOfflineProof: false,
+        cert: found,
+        offlineRevocationNotice: OFFLINE_REVOCATION_DISCLAIMER,
+        legalDisclaimer: LEGAL_IDENTITY_DISCLAIMER,
+        keyRecoveryNotice: KEY_RECOVERY_LIMITATION_NOTICE,
+      });
+    } else {
+      setMatchedCert(null);
+      setVerificationOutcome(null);
+    }
     setHasSearched(true);
   };
 
@@ -86,7 +118,7 @@ export const PublicVerificationModal: React.FC<PublicVerificationModalProps> = (
           <div>
             <h2>🔍 Public Certificate of Authenticity Verification</h2>
             <p className="modal-subtitle">
-              Verify artwork provenance, artist attribution, SHA-256 digests, and ECDSA P-256 studio digital signatures.
+              Cryptographic verification of SHA-256 digests, ECDSA P-256 studio digital signatures, and provenance integrity.
             </p>
           </div>
           <button type="button" className="modal-close-btn" onClick={onClose}>✕</button>
@@ -108,13 +140,18 @@ export const PublicVerificationModal: React.FC<PublicVerificationModalProps> = (
             </div>
           </form>
 
-          {hasSearched && !matchedCert && (
+          {hasSearched && (!matchedCert || (verificationOutcome && !verificationOutcome.isValid && verificationOutcome.status === 'PAYLOAD_TAMPERED')) && (
             <div className="verify-result-card invalid">
               <span className="verify-icon" aria-hidden="true">✕</span>
-              <h3>No Certificate Found</h3>
+              <h3>
+                {verificationOutcome?.status === 'PAYLOAD_TAMPERED'
+                  ? 'Cryptographic Tampering Detected'
+                  : 'No Certificate Found'}
+              </h3>
               <p>
-                Certificate identifier "<strong>{searchId}</strong>" was not found in the verified registry.
-                Check the ID on the physical certificate or scan the official QR code again.
+                {verificationOutcome?.status === 'PAYLOAD_TAMPERED'
+                  ? 'The cryptographic hash of the decoded attributes does not match the signed SHA-256 fingerprint! This artwork metadata has been altered or corrupted.'
+                  : `Certificate identifier "${searchId}" was not found in the verified repository. Check the ID on the physical certificate or scan the official QR code again.`}
               </p>
             </div>
           )}
@@ -124,23 +161,31 @@ export const PublicVerificationModal: React.FC<PublicVerificationModalProps> = (
               <div className="verify-result-header">
                 <div>
                   <div className="verify-badge-row">
-                    <span className="verify-status-badge">
-                      {matchedCert.status === 'valid' ? '✓ VERIFIED AUTHENTIC' : '⚠️ CERTIFICATE REVOKED'}
+                    {/* Explicit Verification States */}
+                    <span className={`verify-status-badge ${matchedCert.status === 'valid' ? 'badge-valid' : 'badge-revoked'}`}>
+                      {matchedCert.status === 'valid' ? '✓ PAYLOAD INTEGRITY VERIFIED' : '⚠️ CERTIFICATE REVOKED'}
                     </span>
-                    {isPortableProof && (
-                      <span className="portable-proof-badge">
-                        🌐 Cross-Device Verified Offline
+
+                    {verificationOutcome?.isSignatureVerified && (
+                      <span className="ecdsa-verified-badge" title="Mathematical signature matches private key corresponding to public key">
+                        ✍️ ECDSA Signature Valid
                       </span>
                     )}
-                    {isSignatureValid && (
-                      <span className="ecdsa-verified-badge">
-                        ✍️ ECDSA P-256 Signature Verified
+
+                    {/* Honest Creator Identity Disclosure */}
+                    <span className="identity-unverified-badge" title="Self-issued studio key. Not verified by external notary or Certificate Authority.">
+                      🛡️ Self-Issued Studio Key (Identity Not CA-Certified)
+                    </span>
+
+                    {verificationOutcome?.isOfflineProof && (
+                      <span className="portable-proof-badge" title="Verified completely offline without issuer local storage">
+                        🌐 Cross-Device Offline Proof
                       </span>
                     )}
                   </div>
                   <h3 className="verify-artwork-title">{matchedCert.artworkTitle}</h3>
                   <div className="verify-artist-line">
-                    By <strong>{matchedCert.artistName}</strong> ({matchedCert.yearCreated})
+                    Attributed Artist: <strong>{matchedCert.artistName}</strong> ({matchedCert.yearCreated})
                   </div>
                 </div>
                 <div className="verify-cert-id-badge">{matchedCert.certificateId}</div>
@@ -196,10 +241,20 @@ export const PublicVerificationModal: React.FC<PublicVerificationModalProps> = (
               )}
 
               <div className="verify-blockchain-status">
-                <strong>Provenance Authority:</strong> {matchedCert.issuer}
-                <p className="verify-disclaimer">
-                  {matchedCert.legalNotice || "LEGAL TITLE NOTICE: This cryptographic digital certificate attests to the artwork attributes recorded by the artist's studio vault at issuance date. It establishes immutable cryptographic provenance but does not constitute a government-registered copyright, statutory title deed, or registered trademark without formal legal contracts of transfer."}
-                </p>
+                <strong>Issuing Studio Authority:</strong> {matchedCert.issuer}
+                
+                {/* Clear Cryptographic & Legal Boundaries */}
+                <div className="verify-disclosure-box">
+                  <p className="verify-disclaimer-point">
+                    <strong>⚖️ Ownership & Non-Repudiation Notice:</strong> {LEGAL_IDENTITY_DISCLAIMER}
+                  </p>
+                  <p className="verify-disclaimer-point">
+                    <strong>🌐 Offline Verification Scope:</strong> {OFFLINE_REVOCATION_DISCLAIMER}
+                  </p>
+                  <p className="verify-disclaimer-point">
+                    <strong>📜 Legal Title Notice:</strong> {matchedCert.legalNotice || PROVENANCE_LEGAL_NOTICE}
+                  </p>
+                </div>
               </div>
             </div>
           )}

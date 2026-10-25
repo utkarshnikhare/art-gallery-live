@@ -6,10 +6,19 @@
  * FIPS 186-4 ECDSA with P-256 curve digital signatures.
  */
 
-import { EncryptedStoragePayload, DigitalCertificate } from '../types';
+import { EncryptedStoragePayload, DigitalCertificate, VerificationOutcome, PortableProofPayload } from '../types';
 
 export const PROVENANCE_LEGAL_NOTICE =
   "LEGAL TITLE NOTICE: This cryptographic digital certificate attests to the artwork attributes recorded by the artist's studio vault at issuance date. It establishes immutable cryptographic provenance but does not constitute a government-registered copyright, statutory title deed, or registered trademark without formal legal contracts of transfer.";
+
+export const KEY_RECOVERY_LIMITATION_NOTICE =
+  "KEY MANAGEMENT & RECOVERY NOTICE: The studio private key is stored exclusively within your local browser storage. If this key is deleted, storage is cleared, or device is lost without an encrypted backup, the private key CANNOT mathematically be reconstructed. Any subsequent certificates must be issued using a newly generated keypair and existing certificates marked as superseded.";
+
+export const OFFLINE_REVOCATION_DISCLAIMER =
+  "OFFLINE VERIFICATION SCOPE: Cryptographic math and payload integrity are verified 100% offline without network connectivity. Real-time certificate revocation status cannot be guaranteed without an active registry query.";
+
+export const LEGAL_IDENTITY_DISCLAIMER =
+  "CREATOR IDENTITY NOTICE: An ECDSA digital signature confirms only that the payload matches the private key corresponding to the public key. It does not independently prove real-world legal identity, physical artwork possession, or statutory ownership.";
 
 /**
  * Pure TypeScript SHA-256 implementation ensuring deterministic operation in any environment
@@ -324,7 +333,8 @@ export function verifyArtworkFingerprint(
  * Encodes all necessary metadata and cryptographic signatures into a compact, URL-safe Base64 token
  */
 export function createPortableProofToken(cert: DigitalCertificate): string {
-  const payload = {
+  const payload: PortableProofPayload = {
+    v: '2.0',
     id: cert.certificateId,
     t: cert.artworkTitle,
     a: cert.artistName,
@@ -333,6 +343,7 @@ export function createPortableProofToken(cert: DigitalCertificate): string {
     d: cert.dimensionsText,
     e: cert.editionText,
     dt: cert.issueDate,
+    iss: cert.issuer || 'Morrowkind Provenance Vault',
     h: cert.sha256Fingerprint,
     sig: cert.ecdsaSignature || '',
     pk: cert.publicKeyJwk || null,
@@ -348,13 +359,37 @@ export function createPortableProofToken(cert: DigitalCertificate): string {
 
 /**
  * Unpack and verify a self-contained portable proof token on ANY third-party device
+ * Implements strict schema validation, oversized payload defense, cryptographic verification,
+ * and explicit non-repudiation / identity distinction states.
  */
-export async function verifyPortableProofToken(token: string): Promise<{
-  isValid: boolean;
-  cert?: DigitalCertificate;
-  isSignatureVerified: boolean;
-  error?: string;
-}> {
+export async function verifyPortableProofToken(token: string): Promise<VerificationOutcome> {
+  // 1. Guard against oversized payload attacks (> 64KB)
+  if (!token || typeof token !== 'string') {
+    return {
+      isValid: false,
+      status: 'STATUS_UNAVAILABLE',
+      statusMessage: 'Empty or invalid proof token string provided.',
+      isHashValid: false,
+      isSignatureVerified: false,
+      issuerIdentityType: 'unknown',
+      isOfflineProof: false,
+      error: 'Proof token is missing or not a string.'
+    };
+  }
+
+  if (token.length > 65536) {
+    return {
+      isValid: false,
+      status: 'STATUS_UNAVAILABLE',
+      statusMessage: 'Proof token exceeds allowable 64KB payload boundary.',
+      isHashValid: false,
+      isSignatureVerified: false,
+      issuerIdentityType: 'unknown',
+      isOfflineProof: false,
+      error: 'Oversized proof token payload rejected to prevent memory exhaustion.'
+    };
+  }
+
   try {
     // Restore base64 padding
     let base64 = token.replace(/-/g, '+').replace(/_/g, '/');
@@ -366,18 +401,41 @@ export async function verifyPortableProofToken(token: string): Promise<{
     const jsonStr = new TextDecoder().decode(jsonBytes);
     const p = JSON.parse(jsonStr);
 
+    // Schema and required field checks
     if (!p.id || !p.t || !p.h) {
-      return { isValid: false, isSignatureVerified: false, error: 'Malformed proof payload' };
+      return {
+        isValid: false,
+        status: 'STATUS_UNAVAILABLE',
+        statusMessage: 'Malformed proof payload: missing required identification fields.',
+        isHashValid: false,
+        isSignatureVerified: false,
+        issuerIdentityType: 'unknown',
+        isOfflineProof: false,
+        error: 'Malformed proof payload'
+      };
     }
 
-    // 1. Recalculate SHA-256 fingerprint from unpacked metadata
+    if (p.v && p.v !== '2.0' && p.v !== '1.0') {
+      return {
+        isValid: false,
+        status: 'STATUS_UNAVAILABLE',
+        statusMessage: `Incompatible token schema version: ${p.v}. Expected 2.0.`,
+        isHashValid: false,
+        isSignatureVerified: false,
+        issuerIdentityType: 'unknown',
+        isOfflineProof: false,
+        error: `Incompatible schema version: ${p.v}`
+      };
+    }
+
+    // 2. Recalculate SHA-256 fingerprint from unpacked metadata
     const recalculatedHash = generateArtworkFingerprint({
       title: p.t,
-      artistName: p.a,
-      yearCreated: p.y,
-      medium: p.m,
-      dimensionsText: p.d,
-      editionText: p.e,
+      artistName: p.a || '',
+      yearCreated: p.y || 0,
+      medium: p.m || '',
+      dimensionsText: p.d || '',
+      editionText: p.e || '',
       uniqueSalt: p.id,
     });
 
@@ -385,18 +443,42 @@ export async function verifyPortableProofToken(token: string): Promise<{
     if (!isHashValid) {
       return {
         isValid: false,
+        status: 'PAYLOAD_TAMPERED',
+        statusMessage: 'Cryptographic hash mismatch! Artwork attributes have been tampered with or altered.',
+        isHashValid: false,
         isSignatureVerified: false,
+        issuerIdentityType: 'unknown',
+        isOfflineProof: true,
         error: 'Cryptographic hash mismatch! The artwork attributes have been modified.',
+        offlineRevocationNotice: OFFLINE_REVOCATION_DISCLAIMER,
+        legalDisclaimer: LEGAL_IDENTITY_DISCLAIMER,
+        keyRecoveryNotice: KEY_RECOVERY_LIMITATION_NOTICE,
       };
     }
 
-    // 2. Verify ECDSA signature if present
+    // 3. Verify ECDSA signature if present
     let isSignatureVerified = false;
     if (p.sig && p.pk) {
       isSignatureVerified = await verifyArtworkSignature(p.h, p.sig, p.pk);
+      if (!isSignatureVerified) {
+        return {
+          isValid: false,
+          status: 'SIGNATURE_INVALID',
+          statusMessage: 'ECDSA signature invalid! The signature does not correspond to the public key.',
+          isHashValid: true,
+          isSignatureVerified: false,
+          issuerIdentityType: 'unknown',
+          isOfflineProof: true,
+          error: 'Signature mathematical verification failed.',
+          offlineRevocationNotice: OFFLINE_REVOCATION_DISCLAIMER,
+          legalDisclaimer: LEGAL_IDENTITY_DISCLAIMER,
+          keyRecoveryNotice: KEY_RECOVERY_LIMITATION_NOTICE,
+        };
+      }
     }
 
     const reconstructedCert: DigitalCertificate = {
+      schemaVersion: p.v || '2.0',
       certificateId: p.id,
       artworkId: `art-${p.id}`,
       artworkTitle: p.t,
@@ -406,7 +488,7 @@ export async function verifyPortableProofToken(token: string): Promise<{
       dimensionsText: p.d,
       editionText: p.e,
       issueDate: p.dt,
-      issuer: 'Morrowkind Provenance Vault (Self-Verifying Proof)',
+      issuer: p.iss || 'Morrowkind Provenance Vault (Self-Verifying Proof)',
       sha256Fingerprint: p.h,
       ecdsaSignature: p.sig,
       publicKeyJwk: p.pk,
@@ -420,15 +502,64 @@ export async function verifyPortableProofToken(token: string): Promise<{
       },
     };
 
+    // 4. Check revocation / superseded status
+    if (p.st === 'revoked') {
+      return {
+        isValid: false,
+        status: 'CERTIFICATE_REVOKED',
+        statusMessage: `Certificate revoked by issuer. Reason: ${p.rr || 'No reason specified'}`,
+        isHashValid: true,
+        isSignatureVerified,
+        issuerIdentityType: 'self-issued-unverified',
+        isOfflineProof: true,
+        cert: reconstructedCert,
+        offlineRevocationNotice: OFFLINE_REVOCATION_DISCLAIMER,
+        legalDisclaimer: LEGAL_IDENTITY_DISCLAIMER,
+        keyRecoveryNotice: KEY_RECOVERY_LIMITATION_NOTICE,
+      };
+    }
+
+    if (p.st === 'superseded') {
+      return {
+        isValid: false,
+        status: 'CERTIFICATE_SUPERSEDED',
+        statusMessage: 'Certificate has been superseded by a newly issued replacement certificate.',
+        isHashValid: true,
+        isSignatureVerified,
+        issuerIdentityType: 'self-issued-unverified',
+        isOfflineProof: true,
+        cert: reconstructedCert,
+        offlineRevocationNotice: OFFLINE_REVOCATION_DISCLAIMER,
+        legalDisclaimer: LEGAL_IDENTITY_DISCLAIMER,
+        keyRecoveryNotice: KEY_RECOVERY_LIMITATION_NOTICE,
+      };
+    }
+
+    // 5. Success state: distinguish mathematical validity from verified legal identity
     return {
       isValid: true,
-      cert: reconstructedCert,
+      status: isSignatureVerified ? 'SIGNATURE_VALID_ISSUER_UNVERIFIED' : 'PAYLOAD_INTEGRITY_VERIFIED',
+      statusMessage: isSignatureVerified
+        ? 'Payload integrity and ECDSA digital signature verified. Issuer identity is self-issued and unverified by independent CA.'
+        : 'Payload integrity confirmed via SHA-256 fingerprint.',
+      isHashValid: true,
       isSignatureVerified,
+      issuerIdentityType: 'self-issued-unverified',
+      isOfflineProof: true,
+      cert: reconstructedCert,
+      offlineRevocationNotice: OFFLINE_REVOCATION_DISCLAIMER,
+      legalDisclaimer: LEGAL_IDENTITY_DISCLAIMER,
+      keyRecoveryNotice: KEY_RECOVERY_LIMITATION_NOTICE,
     };
   } catch (err: any) {
     return {
       isValid: false,
+      status: 'STATUS_UNAVAILABLE',
+      statusMessage: `Failed to decode proof token: ${err.message}`,
+      isHashValid: false,
       isSignatureVerified: false,
+      issuerIdentityType: 'unknown',
+      isOfflineProof: false,
       error: `Failed to decode proof token: ${err.message}`,
     };
   }

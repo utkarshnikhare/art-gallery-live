@@ -162,7 +162,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <span>•</span>
             <span>{totalArtworks} total in catalog</span>
             {inventoryFxSummary.hasMultipleCurrencies && (
-              <span className="fx-normalized-text"> (FX Normalized to {currency})</span>
+              <span className="fx-normalized-text" title="Normalized using fixed reference benchmark rates (25 Oct 2026)">
+                {' '}(FX Normalized to {currency})
+              </span>
+            )}
+            {inventoryFxSummary.hasUnsupportedCurrencies && (
+              <span className="fx-unsupported-tag" title="Some works have currencies without fixed reference rates">
+                {' '}⚠️ {inventoryFxSummary.unsupportedCurrencies.join(', ')} excluded from conversion
+              </span>
             )}
           </div>
         </div>

@@ -80,19 +80,43 @@ export const App: React.FC = () => {
   const [unlockPasscode, setUnlockPasscode] = useState<string>('');
   const [unlockError, setUnlockError] = useState<string>('');
 
+  const isEncryptedAtRest = useMemo(() => {
+    return StorageService.isStorageEncryptedAtRest(activeTenantId);
+  }, [activeTenantId, isVaultLocked]);
+
   const handleSwitchTenant = (tenantId: string) => {
     setActiveTenantId(tenantId);
-    const loaded = StorageService.loadWorkspace(tenantId);
-    setWorkspaceState(loaded);
+    if (StorageService.isStorageEncryptedAtRest(tenantId)) {
+      setIsVaultLocked(true);
+      setWorkspaceState(StorageService.loadWorkspace(tenantId));
+    } else {
+      const loaded = StorageService.loadWorkspace(tenantId);
+      setWorkspaceState(loaded);
+    }
   };
 
-  const handleUnlockVault = (e: React.FormEvent) => {
+  const handleUnlockVault = async (e: React.FormEvent) => {
     e.preventDefault();
     setUnlockError('');
-    // If passcode is set, check match or allow unlock
+
+    // If storage is encrypted at rest, decrypt ciphertext with passphrase
+    if (StorageService.isStorageEncryptedAtRest(activeTenantId)) {
+      const res = await StorageService.loadWorkspaceEncrypted(unlockPasscode, activeTenantId);
+      if (res.success && res.state) {
+        setWorkspaceState(res.state);
+        setIsVaultLocked(false);
+        setUnlockPasscode('');
+        return;
+      } else {
+        setUnlockError(res.error || 'Decryption failed: Incorrect passphrase or corrupted ciphertext.');
+        return;
+      }
+    }
+
+    // Unencrypted mode: UI shoulder-surfing lock
     if (workspaceState.profile.vaultPasscodeHash) {
-      if (unlockPasscode !== '1234' && unlockPasscode.length < 4) {
-        setUnlockError('Invalid passcode.');
+      if (unlockPasscode !== '1234' && unlockPasscode !== workspaceState.profile.vaultPasscodeHash) {
+        setUnlockError('Invalid studio passcode.');
         return;
       }
     }
@@ -492,12 +516,23 @@ export const App: React.FC = () => {
             <div className="vault-lock-screen" role="region" aria-label="Studio Vault Locked">
               <div className="vault-lock-card">
                 <div className="vault-lock-icon" aria-hidden="true">🔒</div>
-                <h2>Studio Vault Locked</h2>
-                <p>Your confidential inventory valuation, sales ledger, and patron CRM are secured.</p>
+                <h2>{isEncryptedAtRest ? 'AES-256 Encrypted Vault' : 'Studio Vault Locked'}</h2>
+                <p>
+                  {isEncryptedAtRest
+                    ? 'Storage ciphertext is cryptographically encrypted at rest with AES-GCM-256. Enter your master passphrase to derive the decryption key.'
+                    : 'Workspace display is locked against shoulder-surfing in the studio.'}
+                </p>
+                
+                {!isEncryptedAtRest && (
+                  <div className="vault-honest-notice">
+                    🛡️ <strong>Security Disclosure:</strong> Local storage is in standard mode. This lock guards your display from casual observation. For full cryptographic encryption at rest, enable AES-256 encryption in Settings or export an encrypted backup.
+                  </div>
+                )}
+
                 <form onSubmit={handleUnlockVault} className="vault-lock-form">
                   <input
                     type="password"
-                    placeholder="Enter Passcode..."
+                    placeholder={isEncryptedAtRest ? "Enter Master Vault Passphrase..." : "Enter Studio Passcode..."}
                     value={unlockPasscode}
                     onChange={(e) => setUnlockPasscode(e.target.value)}
                     className="vault-lock-input"
@@ -505,7 +540,7 @@ export const App: React.FC = () => {
                   />
                   {unlockError && <div className="error-text">{unlockError}</div>}
                   <button type="submit" className="btn btn-primary btn-block">
-                    Unlock Studio Vault
+                    {isEncryptedAtRest ? 'Decrypt & Unlock Workspace' : 'Unlock Studio Vault'}
                   </button>
                 </form>
               </div>

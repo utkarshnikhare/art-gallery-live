@@ -60,6 +60,100 @@ export class StorageService {
   }
 
   /**
+   * Determine whether the local workspace storage is encrypted at rest
+   */
+  static isStorageEncryptedAtRest(tenantId = 'default'): boolean {
+    try {
+      if (typeof localStorage === 'undefined') return false;
+      const key = StorageService.getStorageKey(tenantId);
+      const raw = localStorage.getItem(key);
+      if (!raw) return false;
+      const parsed = JSON.parse(raw);
+      return parsed && parsed.encrypted === true && parsed.algorithm === 'AES-GCM-256';
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Save workspace with authenticated AES-GCM-256 encryption at rest
+   */
+  static async saveWorkspaceEncrypted(
+    state: ArtistWorkspaceState,
+    passphrase: string,
+    tenantId = 'default'
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      if (typeof localStorage === 'undefined') return { success: true };
+      if (!passphrase || passphrase.length < 6) {
+        return { success: false, error: 'Vault passphrase must be at least 6 characters long.' };
+      }
+
+      const key = StorageService.getStorageKey(tenantId);
+      const plainSerialized = JSON.stringify(state);
+      const encryptedPayload = await encryptAesGcm(plainSerialized, passphrase);
+      const payloadString = JSON.stringify(encryptedPayload);
+
+      // Staging write first to prevent data corruption
+      localStorage.setItem(STAGING_KEY, payloadString);
+      localStorage.setItem(key, payloadString);
+      localStorage.removeItem(STAGING_KEY);
+
+      return { success: true };
+    } catch (err: any) {
+      console.error('Failed to save encrypted workspace:', err);
+      return { success: false, error: err.message || 'Encryption-at-rest save failed' };
+    }
+  }
+
+  /**
+   * Load workspace from AES-GCM-256 encrypted-at-rest storage using master passphrase
+   */
+  static async loadWorkspaceEncrypted(
+    passphrase: string,
+    tenantId = 'default'
+  ): Promise<{ success: boolean; state?: ArtistWorkspaceState; error?: string }> {
+    try {
+      if (typeof localStorage === 'undefined') {
+        return { success: true, state: EMPTY_WORKSPACE };
+      }
+      const key = StorageService.getStorageKey(tenantId);
+      const raw = localStorage.getItem(key);
+      if (!raw) {
+        return { success: true, state: EMPTY_WORKSPACE };
+      }
+
+      const parsed = JSON.parse(raw);
+      if (!parsed.encrypted || parsed.algorithm !== 'AES-GCM-256') {
+        // Plaintext payload fallback
+        return { success: true, state: StorageService.loadWorkspace(tenantId) };
+      }
+
+      const decryptedJson = await decryptAesGcm(parsed, passphrase);
+      const ws = JSON.parse(decryptedJson);
+
+      const validatedState: ArtistWorkspaceState = {
+        profile: { ...INITIAL_PROFILE, ...(ws.profile || {}), encryptionAtRest: true },
+        inventory: Array.isArray(ws.inventory) ? ws.inventory : [],
+        sales: Array.isArray(ws.sales) ? ws.sales : [],
+        collectors: Array.isArray(ws.collectors) ? ws.collectors : [],
+        exhibitions: Array.isArray(ws.exhibitions) ? ws.exhibitions : [],
+        campaigns: Array.isArray(ws.campaigns) ? ws.campaigns : [],
+        certificates: Array.isArray(ws.certificates) ? ws.certificates : [],
+        licensing: Array.isArray(ws.licensing) ? ws.licensing : [],
+        auditLogs: Array.isArray(ws.auditLogs) ? ws.auditLogs : [],
+      };
+
+      return { success: true, state: validatedState };
+    } catch (err: any) {
+      return {
+        success: false,
+        error: `Decryption failed: ${err.message || 'Incorrect passphrase or tampered ciphertext.'}`
+      };
+    }
+  }
+
+  /**
    * Load entire workspace state from storage
    */
   static loadWorkspace(tenantId = 'default'): ArtistWorkspaceState {
@@ -72,7 +166,22 @@ export class StorageService {
       if (!serialized) {
         return EMPTY_WORKSPACE;
       }
-      const parsed: ArtistWorkspaceState = JSON.parse(serialized);
+      const parsed = JSON.parse(serialized);
+
+      // Check if this tenant is encrypted at rest
+      if (parsed && parsed.encrypted === true && parsed.algorithm === 'AES-GCM-256') {
+        // Encrypted at rest: cannot parse plaintext without passphrase!
+        return {
+          ...EMPTY_WORKSPACE,
+          profile: {
+            ...INITIAL_PROFILE,
+            vaultProtected: true,
+            encryptionAtRest: true,
+            sessionVaultLock: true,
+          }
+        };
+      }
+
       // Ensure all arrays are initialized
       return {
         profile: { ...INITIAL_PROFILE, ...(parsed.profile || {}) },

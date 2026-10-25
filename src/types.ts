@@ -463,7 +463,51 @@ export interface MarketingCampaign {
   notes?: string;
 }
 
+export type VerificationStatusType =
+  | 'PAYLOAD_INTEGRITY_VERIFIED'
+  | 'SIGNATURE_VALID_ISSUER_UNVERIFIED'
+  | 'SIGNATURE_VALID_ISSUER_VERIFIED'
+  | 'SIGNATURE_INVALID'
+  | 'PAYLOAD_TAMPERED'
+  | 'CERTIFICATE_REVOKED'
+  | 'CERTIFICATE_SUPERSEDED'
+  | 'STATUS_UNAVAILABLE';
+
+export interface VerificationOutcome {
+  isValid: boolean;
+  status: VerificationStatusType;
+  statusMessage: string;
+  isHashValid: boolean;
+  isSignatureVerified: boolean;
+  issuerIdentityType: 'self-issued-unverified' | 'independent-verified' | 'unknown';
+  isOfflineProof: boolean;
+  cert?: DigitalCertificate;
+  offlineRevocationNotice?: string;
+  legalDisclaimer?: string;
+  keyRecoveryNotice?: string;
+  error?: string;
+}
+
+export interface PortableProofPayload {
+  v: string; // Schema version, e.g. '2.0'
+  id: string; // Certificate ID
+  t: string; // Artwork Title
+  a: string; // Artist Name
+  y: number; // Year Created
+  m: string; // Medium
+  d: string; // Dimensions
+  e: string; // Edition
+  dt: string; // Issue Date
+  iss: string; // Issuer
+  h: string; // Canonical SHA-256 Fingerprint
+  sig?: string; // Base64 ECDSA P-256 signature
+  pk?: any; // Public key JWK
+  st: 'valid' | 'revoked' | 'superseded';
+  rr?: string; // Revocation Reason
+}
+
 export interface DigitalCertificate {
+  schemaVersion?: string; // '2.0'
   certificateId: string; // e.g. MK-COA-2026-7842
   artworkId: string;
   artworkTitle: string;
@@ -478,6 +522,7 @@ export interface DigitalCertificate {
   ecdsaSignature?: string; // Asymmetric digital signature over SHA-256 hash
   publicKeyJwk?: any; // Public key JWK for third-party verification
   proofToken?: string; // Self-contained portable URL proof token
+  issuerIdentityStatus?: 'self-issued-unverified' | 'independent-verified';
   verificationUrl: string;
   status: 'valid' | 'revoked' | 'superseded';
   revokedAt?: string;
