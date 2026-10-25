@@ -49,7 +49,7 @@ export function calculatePricingRecommendation(inputs: PricingInputs): PricingRe
 
   // Gallery Retail Price: Must accommodate gallery commission (default 50%) so artist receives their studio price
   // Formula: DirectPrice / (1 - (CommissionRate / 100))
-  const commissionRate = Math.min(80, Math.max(0, inputs.galleryCommissionPercent || 50));
+  const commissionRate = Math.min(80, Math.max(0, inputs.galleryCommissionPercent !== undefined && !isNaN(inputs.galleryCommissionPercent) ? inputs.galleryCommissionPercent : 50));
   const galleryRetentionFactor = 1 - (commissionRate / 100);
   const galleryRetailPrice = galleryRetentionFactor > 0 
     ? Math.round(directStudioPrice / galleryRetentionFactor) 

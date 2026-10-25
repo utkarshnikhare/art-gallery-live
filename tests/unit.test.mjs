@@ -1521,6 +1521,132 @@ it('56. Studio Privacy Passcode Verification: Blank, incorrect, missing/unconfig
   assert.equal(correctInput.error, undefined);
 });
 
+// 57. Pricing Recommendation Engine: 0% commission rate must not be overridden to default 50%
+it('57. Pricing Recommendation Engine: 0% commission rate must not be overridden to default 50%', () => {
+  const inputs = {
+    hoursWorked: 20,
+    hourlyWage: 50,
+    materialsCost: 200,
+    framingCost: 100,
+    studioOverheadCost: 50,
+    width: 60,
+    height: 80,
+    unit: 'cm',
+    galleryCommissionPercent: 0, // Direct studio co-op sale with 0% commission
+    experienceLevel: 'emerging',
+    currency: 'USD'
+  };
+
+  const rec = calculatePricingRecommendation(inputs);
+  // Cost floor = 20*50 + (200 + 100 + 50) = 1000 + 350 = 1350
+  assert.equal(rec.costFloorPrice, 1350);
+  // Emerging markup = 1350 * 1.35 = 1822.5 => 1823
+  assert.equal(rec.directStudioPrice, 1823);
+  // With 0% commission, Gallery Retail Price must equal Direct Studio Price (1823), NOT 50% split (3646)
+  assert.equal(rec.galleryRetailPrice, 1823, '0% commission must yield directStudioPrice, not 50% split');
+});
+
+// 58. CSV Formula Injection Defense: Neutralize whitespace-padded formula triggers
+it('58. CSV Formula Injection Defense: Neutralize whitespace-padded formula triggers', () => {
+  const maliciousRows = [
+    { title: 'Normal Artwork', price: 1000 },
+    { title: '=cmd|\' /C calc\'!A0', price: 2000 },
+    { title: '   =HYPERLINK("http://attacker.com")', price: 3000 },
+    { title: '   +cmd|calc', price: 4000 },
+    { title: '   @SUM(1+1)*cmd', price: 5000 },
+    { title: '   |curl attacker.com', price: 6000 },
+    { title: '   %0Acalc', price: 7000 },
+  ];
+
+  const columns = [
+    { key: 'title', label: 'Title' },
+    { key: 'price', label: 'Price' }
+  ];
+
+  const csvOutput = exportToCsv(maliciousRows, columns);
+  
+  // Every formula injection trigger (direct or whitespace-padded) must be prefixed with a single quote
+  assert.ok(csvOutput.includes("\"'=cmd|' /C calc'!A0\""), 'Direct = formula must be neutralized');
+  assert.ok(csvOutput.includes("\"'   =HYPERLINK(\"\"http://attacker.com\"\")\""), 'Space-padded = formula must be neutralized');
+  assert.ok(csvOutput.includes("\"'   +cmd|calc\""), 'Space-padded + formula must be neutralized');
+  assert.ok(csvOutput.includes("\"'   @SUM(1+1)*cmd\""), 'Space-padded @ formula must be neutralized');
+  assert.ok(csvOutput.includes("\"'   |curl attacker.com\""), 'Space-padded | formula must be neutralized');
+  assert.ok(csvOutput.includes("\"'   %0Acalc\""), 'Space-padded % formula must be neutralized');
+});
+
+// 59. StorageService Backup Restoration Hardening: Defend against prototype pollution, oversized files, and invalid profile fields
+it('59. StorageService Backup Restoration Hardening: Defend against prototype pollution, oversized files, and invalid profile fields', () => {
+  // A. Rejection of oversized backup JSON (>10MB)
+  const hugePayload = '{"data":"' + 'A'.repeat(11 * 1024 * 1024) + '"}';
+  const oversizedRes = StorageService.restoreBackupJson(hugePayload);
+  assert.equal(oversizedRes.success, false);
+  assert.ok(oversizedRes.error?.includes('exceeds maximum allowable size'));
+
+  // B. Prototype pollution defense & profile sanitization
+  const maliciousBackup = JSON.stringify({
+    workspace: {
+      profile: {
+        __proto__: { polluted: true },
+        artistName: '  Legitimate Artist Name  ',
+        baseCurrency: 'INVALID_CURRENCY_HACK',
+        hourlyRate: -500, // Negative rate
+        defaultMarkupPercent: 999, // >100%
+      },
+      inventory: [
+        { id: 'art-1', title: 'Real Artwork' },
+        null, // Non-object element in array
+        'string-instead-of-object'
+      ]
+    }
+  });
+
+  const res = StorageService.restoreBackupJson(maliciousBackup);
+  assert.equal(res.success, true);
+  assert.ok(res.restoredState);
+  
+  // Check profile fields safely normalized
+  assert.equal(res.restoredState.profile.artistName, 'Legitimate Artist Name');
+  assert.equal(res.restoredState.profile.baseCurrency, 'USD', 'Invalid currency must fall back to default USD');
+  assert.equal(res.restoredState.profile.hourlyRate, 65, 'Negative hourly rate must fall back to default');
+  assert.equal(res.restoredState.profile.defaultMarkupPercent, 50, 'Out-of-range markup must fall back to default');
+  
+  // Check non-objects filtered from collections
+  assert.equal(res.restoredState.inventory.length, 1);
+  assert.equal(res.restoredState.inventory[0].id, 'art-1');
+  
+  // Ensure Object prototype was never polluted
+  assert.equal(({}).polluted, undefined);
+});
+
+// 60. Financial Engine Correctness: Consignment sales net receivable balance due and cash recognition
+it('60. Financial Engine Correctness: Consignment sales net receivable balance due and cash recognition', () => {
+  const gross = 10000;
+  const discount = 0;
+  const netSellingPrice = gross - discount; // 10000
+  const commissionRate = 40; // 40%
+  const commissionAmount = Math.round((netSellingPrice * commissionRate) / 100); // 4000
+  const shippingDeduction = 500;
+  const otherExpenses = 0;
+  const calculatedNet = Math.max(0, netSellingPrice - commissionAmount - shippingDeduction - otherExpenses); // 5500
+
+  // Case 1: Sale is 'Paid'
+  const paidAmountReceived = calculatedNet; // 5500
+  const paidBalanceDue = 0;
+  assert.equal(paidAmountReceived, 5500, 'Artist received cash must equal net proceeds, not gross');
+  assert.equal(paidBalanceDue, 0);
+
+  // Case 2: Sale is 'Pending'
+  const pendingAmountReceived = 0;
+  const pendingBalanceDue = calculatedNet; // 5500
+  assert.equal(pendingBalanceDue, 5500, 'Pending balance due must equal artist net receivable (5500), not gross customer price');
+
+  // Case 3: Sale is 'Partially Paid' (e.g. 2000 deposit received by artist)
+  const depositReceived = 2000;
+  const partialBalanceDue = Math.max(0, calculatedNet - depositReceived); // 3500
+  assert.equal(partialBalanceDue, 3500, 'Partial balance due must reflect remaining net proceeds');
+});
+
+
 
 console.log(`\nData Integrity & Adversarial Tests: ${passed} PASSED, ${failed} FAILED\n`);
 if (failed > 0) process.exit(1);

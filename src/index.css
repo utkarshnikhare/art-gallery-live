@@ -2534,6 +2534,11 @@ html, body {
   background-color: var(--bg-surface);
 }
 
+.table-responsive-wrapper:focus-visible {
+  outline: 2px solid var(--accent-gold);
+  outline-offset: -2px;
+}
+
 .data-table {
   width: 100%;
   border-collapse: collapse;

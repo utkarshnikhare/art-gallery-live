@@ -230,8 +230,9 @@ export function exportToCsv<T extends Record<string, any>>(data: T[], columns: {
   const sanitizeCellValue = (raw: any): string => {
     if (raw === null || raw === undefined) return '';
     let str = typeof raw === 'object' ? JSON.stringify(raw) : String(raw);
-    // OWASP CSV Injection: if starts with =, +, -, @, tab, CR, prepend single quote
-    if (/^[=+\-@\t\r]/.test(str)) {
+    // OWASP CSV Injection: if starts with =, +, -, @, tab, CR, pipe, percent (even with leading spaces), neutralize
+    const trimmed = str.trimStart();
+    if (/^[=+\-@|%\t\r\0]/.test(str) || /^[=+\-@|%]/.test(trimmed)) {
       str = `'${str}`;
     }
     return str.replace(/"/g, '""');

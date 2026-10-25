@@ -86,8 +86,8 @@ export const SalesView: React.FC<SalesViewProps> = ({
   }
 
   const calculatedBalanceDue = formData.paymentStatus === 'Partially Paid'
-    ? Math.max(0, netSellingPrice - (formData.amountReceived || 0))
-    : formData.paymentStatus === 'Pending' ? netSellingPrice : 0;
+    ? Math.max(0, calculatedNet - (formData.amountReceived || 0))
+    : formData.paymentStatus === 'Pending' ? calculatedNet : 0;
 
   const filteredSales = sales.filter((s) => {
     if (filterChannel !== 'all' && s.channel !== filterChannel) return false;
@@ -162,7 +162,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
       shippingAmount: Number(formData.shippingAmount) || 0,
       otherExpenses: Number(formData.otherExpenses) || 0,
       netProceeds: calculatedNet,
-      amountReceived: formData.paymentStatus === 'Partially Paid' ? Number(formData.amountReceived) : (formData.paymentStatus === 'Paid' ? netSellingPrice : 0),
+      amountReceived: formData.paymentStatus === 'Partially Paid' ? Number(formData.amountReceived) : (formData.paymentStatus === 'Paid' ? calculatedNet : 0),
       balanceDue: calculatedBalanceDue,
       refundAmount: formData.paymentStatus === 'Refunded' ? netSellingPrice : 0,
       currency: formData.currency,
@@ -332,7 +332,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
           </button>
         </div>
       ) : (
-        <div className="table-responsive-wrapper">
+        <div className="table-responsive-wrapper" tabIndex={0} role="region" aria-label="Sales transactions data table">
           <table className="data-table">
             <thead>
               <tr>

@@ -425,6 +425,19 @@ export class StorageService {
    */
   static restoreBackupJson(jsonString: string): { success: boolean; error?: string; restoredState?: ArtistWorkspaceState } {
     try {
+      if (typeof jsonString !== 'string') {
+        return { success: false, error: 'Backup content is empty or invalid.' };
+      }
+
+      // Guard: Maximum allowable backup JSON size (10 MB)
+      if (jsonString.length > 10 * 1024 * 1024) {
+        return { success: false, error: 'Backup file exceeds maximum allowable size (10 MB).' };
+      }
+
+      if (!jsonString.trim()) {
+        return { success: false, error: 'Backup content is empty or invalid.' };
+      }
+
       const data = JSON.parse(jsonString);
 
       // Check if user accidentally uploaded an encrypted backup into the plain restore input
@@ -440,15 +453,49 @@ export class StorageService {
         return { success: false, error: 'Invalid backup file structure: workspace object not found' };
       }
 
+      // Defend against prototype pollution & sanitize profile
+      const rawProfile = ws.profile && typeof ws.profile === 'object' ? ws.profile : {};
+      const sanitizedProfile: ArtistProfileSettings = {
+        artistName: typeof rawProfile.artistName === 'string' && rawProfile.artistName.trim()
+          ? rawProfile.artistName.trim().slice(0, 100)
+          : INITIAL_PROFILE.artistName,
+        studioName: typeof rawProfile.studioName === 'string' ? rawProfile.studioName.trim().slice(0, 100) : '',
+        email: typeof rawProfile.email === 'string' && rawProfile.email.includes('@') ? rawProfile.email.trim().slice(0, 120) : '',
+        country: typeof rawProfile.country === 'string' && rawProfile.country.trim()
+          ? rawProfile.country.trim().slice(0, 80)
+          : INITIAL_PROFILE.country,
+        baseCurrency: ['USD', 'EUR', 'GBP', 'INR', 'CAD', 'AUD'].includes(rawProfile.baseCurrency)
+          ? rawProfile.baseCurrency
+          : INITIAL_PROFILE.baseCurrency,
+        hourlyRate: typeof rawProfile.hourlyRate === 'number' && Number.isFinite(rawProfile.hourlyRate) && rawProfile.hourlyRate >= 0
+          ? rawProfile.hourlyRate
+          : INITIAL_PROFILE.hourlyRate,
+        defaultMarkupPercent: typeof rawProfile.defaultMarkupPercent === 'number' && Number.isFinite(rawProfile.defaultMarkupPercent) && rawProfile.defaultMarkupPercent >= 0 && rawProfile.defaultMarkupPercent <= 100
+          ? rawProfile.defaultMarkupPercent
+          : INITIAL_PROFILE.defaultMarkupPercent,
+        measurementUnit: rawProfile.measurementUnit === 'in' ? 'in' : 'cm',
+        vaultProtected: Boolean(rawProfile.vaultProtected),
+        encryptionAtRest: Boolean(rawProfile.encryptionAtRest),
+        vaultPasscodeHash: typeof rawProfile.vaultPasscodeHash === 'string' && rawProfile.vaultPasscodeHash.trim()
+          ? rawProfile.vaultPasscodeHash.trim().slice(0, 128)
+          : undefined,
+      };
+
+      // Cap collections to prevent memory exhaustion (max 10,000 items per array)
+      const sanitizeArray = <T>(arr: any, maxLen = 10000): T[] => {
+        if (!Array.isArray(arr)) return [];
+        return arr.slice(0, maxLen).filter(item => item && typeof item === 'object');
+      };
+
       const validatedState: ArtistWorkspaceState = {
-        profile: { ...INITIAL_PROFILE, ...(ws.profile || {}) },
-        inventory: Array.isArray(ws.inventory) ? ws.inventory : [],
-        sales: Array.isArray(ws.sales) ? ws.sales : [],
-        collectors: Array.isArray(ws.collectors) ? ws.collectors : [],
-        exhibitions: Array.isArray(ws.exhibitions) ? ws.exhibitions : [],
-        campaigns: Array.isArray(ws.campaigns) ? ws.campaigns : [],
-        certificates: Array.isArray(ws.certificates) ? ws.certificates : [],
-        licensing: Array.isArray(ws.licensing) ? ws.licensing : [],
+        profile: sanitizedProfile,
+        inventory: sanitizeArray(ws.inventory),
+        sales: sanitizeArray(ws.sales),
+        collectors: sanitizeArray(ws.collectors),
+        exhibitions: sanitizeArray(ws.exhibitions),
+        campaigns: sanitizeArray(ws.campaigns),
+        certificates: sanitizeArray(ws.certificates),
+        licensing: sanitizeArray(ws.licensing),
         auditLogs: [
           {
             id: `log-restore-${Date.now()}`,
@@ -456,10 +503,10 @@ export class StorageService {
             action: 'RESTORE',
             entityType: 'SETTINGS',
             entityId: 'backup',
-            summary: `Restored workspace backup with ${ws.inventory?.length || 0} artworks and ${ws.sales?.length || 0} sales records`,
+            summary: `Restored workspace backup with ${Array.isArray(ws.inventory) ? ws.inventory.length : 0} artworks and ${Array.isArray(ws.sales) ? ws.sales.length : 0} sales records`,
             actor: 'System'
           },
-          ...(Array.isArray(ws.auditLogs) ? ws.auditLogs : [])
+          ...sanitizeArray<AuditLogEntry>(ws.auditLogs, 500)
         ]
       };
 

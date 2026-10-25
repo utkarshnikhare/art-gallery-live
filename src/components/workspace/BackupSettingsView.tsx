@@ -633,7 +633,7 @@ export const BackupSettingsView: React.FC<BackupSettingsViewProps> = ({
           Immutable log of the last {state.auditLogs.length} state alterations, imports, and certificate issuances.
         </p>
 
-        <div className="table-responsive-wrapper">
+        <div className="table-responsive-wrapper" tabIndex={0} role="region" aria-label="Cryptographic audit trail data table">
           <table className="data-table audit-table">
             <thead>
               <tr>

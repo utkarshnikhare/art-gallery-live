@@ -424,7 +424,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
 
       {/* Table View */}
       {viewMode === 'table' && filteredArtworks.length > 0 && (
-        <div className="table-responsive-wrapper">
+        <div className="table-responsive-wrapper" tabIndex={0} role="region" aria-label="Artwork inventory data table">
           <table className="data-table">
             <thead>
               <tr>
@@ -728,7 +728,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                     )}
                   </div>
 
-                  <div className="table-responsive-wrapper preview-table-container">
+                  <div className="table-responsive-wrapper preview-table-container" tabIndex={0} role="region" aria-label="CSV import row validation table">
                     <table className="data-table">
                       <thead>
                         <tr>
