@@ -25,7 +25,8 @@ async function main() {
 
     // Test Desktop Viewport
     await page.setViewport({ width: 1366, height: 768 });
-    await page.goto(publicUrl, { waitUntil: 'networkidle2' });
+    await page.goto(publicUrl, { waitUntil: 'networkidle0' });
+    await page.waitForSelector('.event-card', { timeout: 10000 });
 
     console.log('[Live Verify] Desktop Page Loaded. Checking console errors...');
     if (errors.length > 0) {
