@@ -201,7 +201,7 @@ async function testAllWorkflows() {
   await page.click('#ws-tab-backup');
   await new Promise((r) => setTimeout(r, 200));
 
-  const exportBtn = await page.$('.backup-actions-grid .btn-primary');
+  const exportBtn = await page.$('.backup-action-grid .btn-primary');
   assertWorkflow('Vault Backup Export button is available and accessible', exportBtn !== null);
 
   // 8. Public Discovery Search & Filter Logic
