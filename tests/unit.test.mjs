@@ -14,6 +14,7 @@ import {
   calculateEventStatus, 
   formatDateRange, 
   parseDateSafe, 
+  parseDateInTimezone,
   formatDateOnly, 
   formatInstantToIST, 
   formatVenueDateTime, 
@@ -1779,21 +1780,21 @@ it('65. Event Closing Boundary & Strict Past Status Protection', () => {
   };
 
   // During exhibition run in IST (e.g. Oct 15, 2026 noon IST)
-  const midRunMs = parseDateSafe('2026-10-15', false, 'Asia/Kolkata');
+  const midRunMs = parseDateInTimezone('2026-10-15', 'Asia/Kolkata', false);
   assert.equal(calculateEventStatus(testEvent, midRunMs), 'happening-now');
 
   // Final day before closing (Oct 25, 2026 23:59:50 IST = 18:29:50 UTC)
-  const lastSecondMs = parseDateSafe('2026-10-25', true, 'Asia/Kolkata') - 1000;
+  const lastSecondMs = parseDateInTimezone('2026-10-25', 'Asia/Kolkata', true) - 1000;
   assert.equal(calculateEventStatus(testEvent, lastSecondMs), 'happening-now');
 
   // Immediately after closing boundary (Oct 26, 2026 00:00:01 IST = 18:30:01 UTC Oct 25)
-  const expiredMs = parseDateSafe('2026-10-25', true, 'Asia/Kolkata') + 2000;
+  const expiredMs = parseDateInTimezone('2026-10-25', 'Asia/Kolkata', true) + 2000;
   const expiredStatus = calculateEventStatus(testEvent, expiredMs);
   assert.equal(expiredStatus, 'past', 'Ended exhibition must strictly be categorized as past');
   assert.notEqual(expiredStatus, 'happening-now', 'Ended exhibition must NEVER return happening-now');
 
   // Before opening (Sept 30, 2026)
-  const beforeOpeningMs = parseDateSafe('2026-09-30', false, 'Asia/Kolkata');
+  const beforeOpeningMs = parseDateInTimezone('2026-09-30', 'Asia/Kolkata', false);
   assert.equal(calculateEventStatus(testEvent, beforeOpeningMs), 'upcoming');
 });
 
@@ -1802,28 +1803,28 @@ it('66. Application Deadline Countdown Arithmetic (IST End-of-Day Boundary)', ()
   const deadlineDate = '2026-11-30';
 
   // 1. Closes today: simulated now is Nov 30, 2026 10:00 AM IST
-  const noonDeadlineDayMs = parseDateSafe('2026-11-30', false, 'Asia/Kolkata') + 10 * 3600 * 1000;
+  const noonDeadlineDayMs = parseDateInTimezone('2026-11-30', 'Asia/Kolkata', false) + 10 * 3600 * 1000;
   const todayRes = getDaysRemainingIST(deadlineDate, noonDeadlineDayMs);
   assert.equal(todayRes.text, 'Closes today');
   assert.equal(todayRes.closesToday, true);
   assert.equal(todayRes.isPast, false);
 
   // 2. 1 day remaining: simulated now is Nov 29, 2026 10:00 AM IST
-  const dayBeforeMs = parseDateSafe('2026-11-29', false, 'Asia/Kolkata') + 10 * 3600 * 1000;
+  const dayBeforeMs = parseDateInTimezone('2026-11-29', 'Asia/Kolkata', false) + 10 * 3600 * 1000;
   const oneDayRes = getDaysRemainingIST(deadlineDate, dayBeforeMs);
   assert.equal(oneDayRes.text, '1 day remaining');
   assert.equal(oneDayRes.days, 1);
   assert.equal(oneDayRes.isPast, false);
 
   // 3. 5 days remaining: simulated now is Nov 25, 2026 10:00 AM IST
-  const fiveDaysBeforeMs = parseDateSafe('2026-11-25', false, 'Asia/Kolkata') + 10 * 3600 * 1000;
+  const fiveDaysBeforeMs = parseDateInTimezone('2026-11-25', 'Asia/Kolkata', false) + 10 * 3600 * 1000;
   const fiveDaysRes = getDaysRemainingIST(deadlineDate, fiveDaysBeforeMs);
   assert.equal(fiveDaysRes.text, '5 days remaining');
   assert.equal(fiveDaysRes.days, 5);
   assert.equal(fiveDaysRes.isPast, false);
 
   // 4. Past deadline: simulated now is Dec 1, 2026 01:00 AM IST
-  const pastDeadlineMs = parseDateSafe('2026-12-01', false, 'Asia/Kolkata') + 3600 * 1000;
+  const pastDeadlineMs = parseDateInTimezone('2026-12-01', 'Asia/Kolkata', false) + 3600 * 1000;
   const pastRes = getDaysRemainingIST(deadlineDate, pastDeadlineMs);
   assert.equal(pastRes.text, 'Deadline passed');
   assert.equal(pastRes.isPast, true);

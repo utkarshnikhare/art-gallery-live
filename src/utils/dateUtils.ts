@@ -34,14 +34,14 @@ export function formatDateOnly(
 }
 
 /**
- * Parses a date string into an absolute millisecond timestamp for a specific target timezone
- * (defaults to Asia/Kolkata).
- * Handles date-only strings by setting the clock to 00:00:00.000 or 23:59:59.999 in that timezone.
+ * Parses a date string into an absolute millisecond timestamp.
+ * If timezone is provided, interprets date-only strings in that specific timezone.
+ * Otherwise, creates a local date without timezone offset shifts.
  */
 export function parseDateSafe(
   dateStr: string,
   isEndOfDay = false,
-  timezone = IST_TIMEZONE
+  timezone?: string
 ): number {
   if (!dateStr) return 0;
 
@@ -55,42 +55,55 @@ export function parseDateSafe(
     const s = isEndOfDay ? 59 : 0;
     const ms = isEndOfDay ? 999 : 0;
 
-    // Determine UTC offset for target timezone at this date
-    try {
-      const utcGuess = Date.UTC(year, month - 1, day, h, m, s, ms);
-      const invDate = new Date(utcGuess);
-      const tzParts = new Intl.DateTimeFormat('en-US', {
-        timeZone: timezone,
-        year: 'numeric',
-        month: 'numeric',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: 'numeric',
-        second: 'numeric',
-        hour12: false,
-      }).formatToParts(invDate);
+    if (timezone) {
+      try {
+        const utcGuess = Date.UTC(year, month - 1, day, h, m, s, ms);
+        const invDate = new Date(utcGuess);
+        const tzParts = new Intl.DateTimeFormat('en-US', {
+          timeZone: timezone,
+          year: 'numeric',
+          month: 'numeric',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: 'numeric',
+          second: 'numeric',
+          hour12: false,
+        }).formatToParts(invDate);
 
-      const tzMap: Record<string, string> = {};
-      tzParts.forEach(p => { tzMap[p.type] = p.value; });
-      const tzYear = Number(tzMap.year);
-      const tzMonth = Number(tzMap.month);
-      const tzDay = Number(tzMap.day);
-      const tzHour = Number(tzMap.hour === '24' ? '0' : tzMap.hour);
-      const tzMin = Number(tzMap.minute);
-      const tzSec = Number(tzMap.second);
+        const tzMap: Record<string, string> = {};
+        tzParts.forEach(p => { tzMap[p.type] = p.value; });
+        const tzYear = Number(tzMap.year);
+        const tzMonth = Number(tzMap.month);
+        const tzDay = Number(tzMap.day);
+        const tzHour = Number(tzMap.hour === '24' ? '0' : tzMap.hour);
+        const tzMin = Number(tzMap.minute);
+        const tzSec = Number(tzMap.second);
 
-      const tzAsUtc = Date.UTC(tzYear, tzMonth - 1, tzDay, tzHour, tzMin, tzSec, ms);
-      const offsetMs = tzAsUtc - utcGuess;
-      return utcGuess - offsetMs;
-    } catch {
-      // Fallback if timezone not supported
-      const d = new Date(year, month - 1, day, h, m, s, ms);
-      return d.getTime();
+        const tzAsUtc = Date.UTC(tzYear, tzMonth - 1, tzDay, tzHour, tzMin, tzSec, ms);
+        const offsetMs = tzAsUtc - utcGuess;
+        return utcGuess - offsetMs;
+      } catch {
+        return new Date(year, month - 1, day, h, m, s, ms).getTime();
+      }
     }
+
+    const d = new Date(year, month - 1, day, h, m, s, ms);
+    return d.getTime();
   }
 
   const parsed = new Date(dateStr).getTime();
   return isNaN(parsed) ? 0 : parsed;
+}
+
+/**
+ * Parses date-only string explicitly in target timezone (defaults to Asia/Kolkata).
+ */
+export function parseDateInTimezone(
+  dateStr: string,
+  timezone = IST_TIMEZONE,
+  isEndOfDay = false
+): number {
+  return parseDateSafe(dateStr, isEndOfDay, timezone);
 }
 
 /**
@@ -183,10 +196,10 @@ export function calculateEventStatus(
   if (event.eventStatus === 'postponed') return 'postponed';
 
   const tz = event.timezone || IST_TIMEZONE;
-  const startMs = parseDateSafe(event.startDate, false, tz);
+  const startMs = parseDateInTimezone(event.startDate, tz, false);
   const endMs = event.endDate
-    ? parseDateSafe(event.endDate, true, tz)
-    : parseDateSafe(event.startDate, true, tz);
+    ? parseDateInTimezone(event.endDate, tz, true)
+    : parseDateInTimezone(event.startDate, tz, true);
 
   if (!startMs) return 'upcoming';
 
@@ -265,7 +278,7 @@ export function getDaysRemainingIST(
     return { days: 0, text: 'No deadline specified', isPast: false, closesToday: false };
   }
 
-  const deadlineMs = parseDateSafe(deadlineDateStr, true, timezone);
+  const deadlineMs = parseDateInTimezone(deadlineDateStr, timezone, true);
   const diffMs = deadlineMs - nowMs;
 
   if (diffMs < 0) {
