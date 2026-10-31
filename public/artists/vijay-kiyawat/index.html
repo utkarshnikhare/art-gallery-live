@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Vijay Kiyawat | Master Artist Showcase & 90-Day Growth Architecture</title>
+  <meta name="description" content="A curated digital presence, exhibition growth strategy, and master painting portfolio for artist Vijay Kiyawat.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #faf7f2;
+      --ink: #1f221e;
+      --muted: #6e6b62;
+      --accent: #9a6f44;
+      --accent-gold: #c59b27;
+      --line: #ded7ca;
+      --card-bg: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'DM Sans', sans-serif;
+      line-height: 1.6;
+    }
+    a { color: inherit; text-decoration: none; }
+    .wrap { max-width: 1200px; margin: auto; padding: 0 30px; }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: #faf7f2ee;
+      backdrop-filter: blur(15px);
+      border-bottom: 1px solid var(--line);
+    }
+    nav {
+      height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    .logo small {
+      display: block;
+      font: 10px 'DM Sans';
+      letter-spacing: 2px;
+      color: var(--muted);
+      margin-top: 3px;
+      text-transform: uppercase;
+    }
+    .links {
+      display: flex;
+      gap: 24px;
+      font-size: 12px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .links a:hover { color: var(--accent); }
+    .btn-group { display: flex; gap: 10px; align-items: center; }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--ink);
+      color: white;
+      padding: 12px 20px;
+      font-size: 11px;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      border: 1px solid var(--ink);
+      cursor: pointer;
+      font-weight: 600;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+    }
+    .button:hover { background: #3b3e39; }
+    .button.light {
+      background: transparent;
+      color: var(--ink);
+      border-color: var(--line);
+    }
+    .button.light:hover { background: #efebe2; }
+    .button.gold {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .hero {
+      min-height: 640px;
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      align-items: center;
+      gap: 60px;
+      padding: 65px 0 80px 0;
+    }
+    .eyebrow {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 2.5px;
+      color: var(--accent);
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    h1, h2, h3 {
+      font-family: 'Playfair Display', serif;
+      font-weight: 600;
+      line-height: 1.15;
+    }
+    h1 {
+      font-size: clamp(44px, 5.5vw, 76px);
+      letter-spacing: -1.5px;
+      margin: 16px 0 20px 0;
+    }
+    h2 {
+      font-size: clamp(32px, 3.8vw, 50px);
+      margin: 15px 0 22px;
+    }
+    h3 { font-size: 24px; margin: 12px 0; }
+    .lead {
+      font-size: 16.5px;
+      line-height: 1.8;
+      color: #55524b;
+      max-width: 560px;
+      margin-bottom: 28px;
+    }
+    .hero-art-card {
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.06);
+    }
+    .hero-art {
+      height: 480px;
+      border-radius: 4px;
+      position: relative;
+      background: radial-gradient(ellipse at 40% 35%, #d7ac7e 0 10%, transparent 35%),
+                  radial-gradient(ellipse at 70% 65%, #2e4d49 0 10%, transparent 40%),
+                  linear-gradient(135deg, #bfb3a0, #e6d4b7 48%, #594d45);
+      overflow: hidden;
+      display: flex;
+      align-items: flex-end;
+      padding: 20px;
+    }
+    .hero-art:before {
+      content: '';
+      position: absolute;
+      width: 76%;
+      height: 74%;
+      top: 13%;
+      left: 12%;
+      border: 16px solid #eee5d6;
+      box-shadow: 0 25px 70px rgba(0,0,0,0.35);
+      background: conic-gradient(from 45deg at 45% 50%, #252c32, #bd8155, #f0d4a0, #4e655b, #b25e42, #252c32);
+      filter: saturate(.85);
+    }
+    .hero-art-label {
+      position: relative;
+      background: rgba(0,0,0,0.65);
+      backdrop-filter: blur(8px);
+      padding: 10px 16px;
+      border-radius: 4px;
+      color: #ffffff;
+      font-size: 11px;
+      letter-spacing: 1px;
+    }
+    .section {
+      padding: 90px 0;
+      border-top: 1px solid var(--line);
+    }
+    .section-head { max-width: 760px; margin-bottom: 45px; }
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+    }
+    .tile {
+      border: 1px solid var(--line);
+      padding: 30px 24px;
+      background: #ffffff;
+      border-radius: 6px;
+      transition: transform 0.2s ease;
+    }
+    .tile:hover { transform: translateY(-3px); }
+    .tile .num {
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+    }
+    .tile h3 { font-size: 20px; margin: 8px 0; }
+    .tile p { font-size: 13.5px; color: var(--muted); margin: 0; }
+    .timeline {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+    .phase {
+      border-top: 3px solid var(--accent);
+      padding-top: 22px;
+      background: #ffffff;
+      border-radius: 0 0 6px 6px;
+      padding: 22px 20px;
+      border-left: 1px solid var(--line);
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+    .phase strong {
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: var(--accent);
+      display: block;
+      margin-bottom: 8px;
+    }
+    .phase h3 { font-size: 20px; margin: 4px 0 10px 0; }
+    .phase p { font-size: 13.5px; color: var(--muted); margin: 0; line-height: 1.6; }
+    
+    .dark-section {
+      background: #1e231e;
+      color: #f5f2eb;
+      padding: 95px 0;
+      border-top: 1px solid #3c423b;
+    }
+    .dark-section .eyebrow { color: #d7b592; }
+    .dark-section h2 { color: #ffffff; }
+    .venues {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .venue {
+      background: #272d27;
+      border: 1px solid #434c43;
+      padding: 26px;
+      border-radius: 6px;
+    }
+    .venue small {
+      color: #d7b592;
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+    .venue h3 { font-size: 20px; margin: 8px 0 10px 0; color: #ffffff; }
+    .venue p { font-size: 13px; color: #b8bcb5; margin: 0; line-height: 1.6; }
+    .venue .venue-action { margin-top: 14px; font-size: 11.5px; font-weight: 600; color: #d7b592; }
+
+    .art-showcase-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-top: 40px;
+    }
+    .art-card {
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    }
+    .art-img-box {
+      height: 280px;
+      background: #f0ebe1;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .art-img-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .art-body { padding: 22px; }
+    .art-body h3 { font-size: 19px; margin: 0 0 6px 0; }
+    .art-meta { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+    .art-price-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--line);
+      padding-top: 14px;
+      margin-top: 14px;
+    }
+    .art-price { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; color: var(--accent); }
+    
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+    .stat {
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 22px;
+      text-align: center;
+    }
+    .stat strong {
+      font-family: 'Playfair Display', serif;
+      font-size: 38px;
+      color: var(--accent);
+      display: block;
+      margin-bottom: 4px;
+    }
+    .stat span { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+    
+    .cta-banner {
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 60px 40px;
+      text-align: center;
+      margin: 40px 0;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.03);
+    }
+    .cta-banner h2 { max-width: 700px; margin: 15px auto 20px auto; }
+    footer {
+      border-top: 1px solid var(--line);
+      padding: 35px 0;
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+      background: #faf7f2;
+    }
+    @media (max-width: 900px) {
+      .hero { grid-template-columns: 1fr; gap: 40px; }
+      .grid-4, .timeline, .venues, .art-showcase-grid, .stats { grid-template-columns: 1fr 1fr; }
+      .links { display: none; }
+    }
+    @media (max-width: 600px) {
+      .grid-4, .timeline, .venues, .art-showcase-grid, .stats { grid-template-columns: 1fr; }
+      .hero-art { height: 340px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <nav>
+      <a class="logo" href="#top">
+        VIJAY KIYAWAT
+        <small>Master Contemporary Painter</small>
+      </a>
+      <div class="links">
+        <a href="#vision">Artist Vision</a>
+        <a href="#works">Selected Works</a>
+        <a href="#roadmap">90-Day Strategy</a>
+        <a href="#galleries">Gallery Targets</a>
+      </div>
+      <div class="btn-group">
+        <a class="button light" href="../../index.html" title="Return to Morrowkind Main Platform">
+          &larr; Platform Hub
+        </a>
+        <a class="button gold" href="#contact">
+          Inquire Artworks
+        </a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <!-- HERO SECTION -->
+  <div class="wrap hero">
+    <div>
+      <div class="eyebrow">Flagship Artist Showcase & Exhibition Strategy</div>
+      <h1>Let the art<br>find its <i>audience.</i></h1>
+      <p class="lead">
+        A deliberate strategy to elevate Vijay Kiyawat’s artistic recognition, present original canvas series to prestigious collectors, and open doors to premier art galleries in Mumbai, Pune, and international art hubs.
+      </p>
+      <div class="btn-group">
+        <a class="button" href="#works">View Master Artworks &darr;</a>
+        <a class="button light" href="../../docs/reports/Art_Platform_Transformation_Master_Report.pdf" target="_blank">
+          Download 18-Page PDF Strategy &nearr;
+        </a>
+      </div>
+    </div>
+    <div class="hero-art-card">
+      <div class="hero-art" role="img" aria-label="Vijay Kiyawat Signature Master Series">
+        <div class="hero-art-label">
+          <strong>VIJAY KIYAWAT STUDIO</strong> &bull; Pune &amp; Mumbai
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SELECTED WORKS -->
+  <section class="section" id="works">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="eyebrow">01 / Curated Portfolio</div>
+        <h2>Original Paintings &amp; Master Works</h2>
+        <p class="lead">
+          Each painting is an original piece executed on archival linen or heavy Belgian cotton canvas, accompanied by an asymmetric cryptographic Certificate of Authenticity (ECDSA P-256).
+        </p>
+      </div>
+
+      <div class="art-showcase-grid">
+        <!-- Artwork 1 -->
+        <div class="art-card">
+          <div class="art-img-box">
+            <img src="https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=800&auto=format&fit=crop" alt="The Silent Horizon - Vijay Kiyawat" loading="lazy">
+          </div>
+          <div class="art-body">
+            <h3>The Silent Horizon</h3>
+            <div class="art-meta">Oil on Belgian Canvas &bull; 120 &times; 180 cm (47 &times; 71 in)</div>
+            <p style="font-size:13px; color:#55524b; margin:0 0 10px 0;">
+              Lyrical abstract composition evoking Sahyadri ridges under twilight glow. Textured impasto technique with organic mineral pigments.
+            </p>
+            <div class="art-price-row">
+              <span class="art-price">&#8377;1,85,000</span>
+              <a class="button light" href="mailto:utkarshnikhare@gmail.com?subject=Inquiry:%20The%20Silent%20Horizon%20by%20Vijay%20Kiyawat&body=Hello,%20I%20would%20like%20to%20inquire%20about%20acquiring%20The%20Silent%20Horizon%20(120x180cm).">
+                Inquire &nearr;
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Artwork 2 -->
+        <div class="art-card">
+          <div class="art-img-box">
+            <img src="https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=800&auto=format&fit=crop" alt="Rhythms of the Sahyadris - Vijay Kiyawat" loading="lazy">
+          </div>
+          <div class="art-body">
+            <h3>Rhythms of the Sahyadris</h3>
+            <div class="art-meta">Acrylic &amp; Mixed Media &bull; 150 &times; 120 cm (59 &times; 47 in)</div>
+            <p style="font-size:13px; color:#55524b; margin:0 0 10px 0;">
+              Dynamic gestural brushwork balancing raw umber and vibrant cobalt accents. Specially suited for double-height residential foyers.
+            </p>
+            <div class="art-price-row">
+              <span class="art-price">&#8377;1,65,000</span>
+              <a class="button light" href="mailto:utkarshnikhare@gmail.com?subject=Inquiry:%20Rhythms%20of%20the%20Sahyadris%20by%20Vijay%20Kiyawat&body=Hello,%20I%20am%20interested%20in%20Rhythms%20of%20the%20Sahyadris%20(150x120cm).">
+                Inquire &nearr;
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Artwork 3 -->
+        <div class="art-card">
+          <div class="art-img-box">
+            <img src="https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=800&auto=format&fit=crop" alt="Geometric Solitude No. 7 - Vijay Kiyawat" loading="lazy">
+          </div>
+          <div class="art-body">
+            <h3>Geometric Solitude No. 7</h3>
+            <div class="art-meta">Oil on Linen &bull; 100 &times; 100 cm (39.4 &times; 39.4 in)</div>
+            <p style="font-size:13px; color:#55524b; margin:0 0 10px 0;">
+              Harmonious geometry exploring spatial stillness, warm sienna and gold leaf undertones. Framed in natural teak moulding.
+            </p>
+            <div class="art-price-row">
+              <span class="art-price">&#8377;1,40,000</span>
+              <a class="button light" href="mailto:utkarshnikhare@gmail.com?subject=Inquiry:%20Geometric%20Solitude%20No.%207%20by%20Vijay%20Kiyawat&body=Hello,%20I%20would%20like%20to%20inquire%20about%20Geometric%20Solitude%20No.%207.">
+                Inquire &nearr;
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 90-DAY STRATEGY -->
+  <section class="section" id="roadmap">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="eyebrow">02 / Strategic Roadmap</div>
+        <h2>90 Days. Four Deliberate Phases.</h2>
+        <p class="lead">
+          Transforming artistic talent into tangible institutional presence, gallery invitations, and verified collector acquisitions.
+        </p>
+      </div>
+
+      <div class="timeline">
+        <div class="phase">
+          <strong>DAYS 01–15</strong>
+          <h3>Discover &amp; Define</h3>
+          <p>Portfolio audit, high-resolution digitization, signature curatorial narrative, and COA digital key generation.</p>
+        </div>
+        <div class="phase">
+          <strong>DAYS 16–30</strong>
+          <h3>Build &amp; Launch</h3>
+          <p>Public digital presence launch, downloadable exhibition pitch deck, and interior designer trade portal integration.</p>
+        </div>
+        <div class="phase">
+          <strong>DAYS 31–60</strong>
+          <h3>Reach &amp; Connect</h3>
+          <p>Outreach to 25+ curated galleries across Mumbai and Pune; scheduling curatorial portfolio reviews.</p>
+        </div>
+        <div class="phase">
+          <strong>DAYS 61–90</strong>
+          <h3>Convert &amp; Exhibit</h3>
+          <p>Exhibition slot confirmation, collector previews, consignment agreements, and live painting sales closing.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TARGET GALLERIES -->
+  <div class="dark-section" id="galleries">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="eyebrow">03 / Target Venues &amp; Outreach</div>
+        <h2>Mumbai &amp; Pune Art Hubs</h2>
+        <p style="color:#b8bcb5;">
+          Direct submission channels and curatorial connections identified for Vijay Kiyawat's portfolio.
+        </p>
+      </div>
+
+      <div class="venues">
+        <div class="venue">
+          <small>Pune</small>
+          <h3>Vida Heydari Contemporary (VHC)</h3>
+          <p>Curatorial review for mid-career contemporary painters. Prime Koregaon Park location.</p>
+          <div class="venue-action">info@vhc.art &bull; vhc.art</div>
+        </div>
+        <div class="venue">
+          <small>Pune</small>
+          <h3>Monalisa Kalagram</h3>
+          <p>Curated weekend showcases, open-air cultural showcases, and solo studio exhibitions.</p>
+          <div class="venue-action">monalisakalagram@gmail.com</div>
+        </div>
+        <div class="venue">
+          <small>Mumbai</small>
+          <h3>Jehangir Art Gallery</h3>
+          <p>Kala Ghoda cultural landmark. Annual allotment applications for high-volume collector reach.</p>
+          <div class="venue-action">info@jehangirartgallery.com</div>
+        </div>
+        <div class="venue">
+          <small>Mumbai</small>
+          <h3>Chemould Prescott Road</h3>
+          <p>Established contemporary institution. Reviewing PDF portfolios for thematic group shows.</p>
+          <div class="venue-action">admin@gallerychemould.com</div>
+        </div>
+        <div class="venue">
+          <small>Mumbai</small>
+          <h3>TARQ Mumbai</h3>
+          <p>Contemporary focus in Fort/Colaba. Continuous rolling review of experimental 2D media.</p>
+          <div class="venue-action">info@tarq.in &bull; tarq.in</div>
+        </div>
+        <div class="venue">
+          <small>Mumbai</small>
+          <h3>Tao Art Gallery</h3>
+          <p>Worli gallery space dedicated to abstract expressionism and established Indian modern art.</p>
+          <div class="venue-action">info@taoartgallery.com</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MEASURES OF PROGRESS -->
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="eyebrow">04 / Targeted Outcomes</div>
+        <h2>Clear Metrics &amp; Commercial Momentum</h2>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <strong>30–40</strong>
+          <span>Qualified Prospects</span>
+        </div>
+        <div class="stat">
+          <strong>20–25</strong>
+          <span>Tailored Dossiers Sent</span>
+        </div>
+        <div class="stat">
+          <strong>5–8</strong>
+          <span>Curator Meetings</span>
+        </div>
+        <div class="stat">
+          <strong>88%</strong>
+          <span>Net Artist Take-Home</span>
+        </div>
+      </div>
+
+      <!-- CTA BANNER -->
+      <div class="cta-banner" id="contact">
+        <div class="eyebrow">Direct Studio Inquiry</div>
+        <h2>Connect Directly with Vijay Kiyawat</h2>
+        <p class="lead" style="margin:auto; max-width:620px;">
+          For original artwork acquisitions, interior designer trade courtesy, or gallery exhibition invitations:
+        </p>
+        <div class="btn-group" style="justify-content:center; margin-top:25px;">
+          <a class="button gold" href="mailto:utkarshnikhare@gmail.com?subject=Artist%20Inquiry%20for%20Vijay%20Kiyawat&body=Hello,%20I%20would%20like%20to%20discuss%20an%20exhibition%20or%20artwork%20acquisition%20for%20Vijay%20Kiyawat.">
+            Send Studio Inquiry &nearr;
+          </a>
+          <a class="button light" href="../../docs/reports/Art_Platform_Transformation_Master_Report.pdf" target="_blank">
+            View Strategic Report (PDF)
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    &copy; 2026 Vijay Kiyawat Fine Art Studio &bull; Powered by Morrowkind Artist Intelligence Platform &bull; All Rights Reserved.
+  </div>
+</footer>
+
+</body>
+</html>

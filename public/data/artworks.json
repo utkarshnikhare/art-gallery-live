@@ -1,7 +1,7 @@
 {
   "metadata": {
-    "lastSuccessfullyUpdated": "2026-10-25T08:45:32.536Z",
-    "totalArtworks": 8,
+    "lastSuccessfullyUpdated": "2026-10-31T18:17:07.087Z",
+    "totalArtworks": 11,
     "coverageNotice": "Verified artwork catalog for interior designers, architects, and private art specifiers with certified dimensions, palettes, framing, and commission availability."
   },
   "artworks": [
@@ -365,6 +365,143 @@
       ],
       "lastVerifiedAt": "2026-10-25T09:21:11.658Z",
       "imageUrl": "https://images.unsplash.com/photo-1579783902237-77b5a19553f1?auto=format&fit=crop&w=800&q=80"
+    },
+    {
+      "id": "art-vijay-kiyawat-silent-horizon",
+      "title": "The Silent Horizon",
+      "artist": "Vijay Kiyawat",
+      "galleryOrSource": "Vijay Kiyawat Studio",
+      "sourceUrl": "https://utkarshnikhare.github.io/art-gallery-live/artists/vijay-kiyawat/",
+      "medium": "Oil on Belgian Canvas",
+      "style": "Lyrical Abstract & Impasto Landscape",
+      "dominantPalette": [
+        "Earthy Ochre",
+        "Deep Teal",
+        "Burnt Sienna",
+        "Raw Umber"
+      ],
+      "dimensionsCm": {
+        "height": 120,
+        "width": 180,
+        "depth": 4
+      },
+      "dimensionsText": "120 × 180 × 4 cm (47.2 × 70.8 × 1.6 in)",
+      "orientation": "horizontal",
+      "framing": "Framed",
+      "customCommissionAvailable": true,
+      "priceType": "exact",
+      "exactPrice": 185000,
+      "currency": "INR",
+      "suitableSpaces": [
+        "Living Room",
+        "Luxury Penthouse Foyer",
+        "Executive Boardroom",
+        "Boutique Hotel Lobby"
+      ],
+      "locationCity": "Pune",
+      "locationCountry": "India",
+      "verifiedFields": [
+        "title",
+        "artist",
+        "medium",
+        "dimensionsCm",
+        "orientation",
+        "customCommissionAvailable",
+        "dominantPalette"
+      ],
+      "lastVerifiedAt": "2026-10-31T18:00:00+05:30",
+      "imageUrl": "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=800&q=80"
+    },
+    {
+      "id": "art-vijay-kiyawat-sahyadris",
+      "title": "Rhythms of the Sahyadris",
+      "artist": "Vijay Kiyawat",
+      "galleryOrSource": "Vijay Kiyawat Studio",
+      "sourceUrl": "https://utkarshnikhare.github.io/art-gallery-live/artists/vijay-kiyawat/",
+      "medium": "Acrylic & Mixed Media on Archival Canvas",
+      "style": "Dynamic Gestural Abstract",
+      "dominantPalette": [
+        "Cobalt Blue",
+        "Raw Umber",
+        "Cadmium Orange",
+        "Titanium White"
+      ],
+      "dimensionsCm": {
+        "height": 150,
+        "width": 120,
+        "depth": 4
+      },
+      "dimensionsText": "150 × 120 × 4 cm (59 × 47.2 × 1.6 in)",
+      "orientation": "vertical",
+      "framing": "Custom Framing Available",
+      "customCommissionAvailable": true,
+      "priceType": "exact",
+      "exactPrice": 165000,
+      "currency": "INR",
+      "suitableSpaces": [
+        "Double-Height Stairwell Foyer",
+        "Master Suite Lounge",
+        "Modern Villa Living Hall"
+      ],
+      "locationCity": "Mumbai",
+      "locationCountry": "India",
+      "verifiedFields": [
+        "title",
+        "artist",
+        "medium",
+        "dimensionsCm",
+        "orientation",
+        "customCommissionAvailable",
+        "dominantPalette"
+      ],
+      "lastVerifiedAt": "2026-10-31T18:00:00+05:30",
+      "imageUrl": "https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&w=800&q=80"
+    },
+    {
+      "id": "art-vijay-kiyawat-geometric-solitude",
+      "title": "Geometric Solitude No. 7",
+      "artist": "Vijay Kiyawat",
+      "galleryOrSource": "Vijay Kiyawat Studio",
+      "sourceUrl": "https://utkarshnikhare.github.io/art-gallery-live/artists/vijay-kiyawat/",
+      "medium": "Oil & Gold Pigment on Fine Linen",
+      "style": "Geometric Contemplative Modern",
+      "dominantPalette": [
+        "Burnt Sienna",
+        "Warm Gold Leaf",
+        "Smoked Charcoal",
+        "Linen Ivory"
+      ],
+      "dimensionsCm": {
+        "height": 100,
+        "width": 100,
+        "depth": 3
+      },
+      "dimensionsText": "100 × 100 × 3 cm (39.4 × 39.4 × 1.2 in)",
+      "orientation": "square",
+      "framing": "Framed",
+      "customCommissionAvailable": true,
+      "priceType": "exact",
+      "exactPrice": 140000,
+      "currency": "INR",
+      "suitableSpaces": [
+        "Private Study",
+        "Dining Salon",
+        "Executive Cabin",
+        "Contemporary Apartment"
+      ],
+      "locationCity": "Pune",
+      "locationCountry": "India",
+      "verifiedFields": [
+        "title",
+        "artist",
+        "medium",
+        "dimensionsCm",
+        "orientation",
+        "customCommissionAvailable",
+        "dominantPalette"
+      ],
+      "lastVerifiedAt": "2026-10-31T18:00:00+05:30",
+      "imageUrl": "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=800&q=80"
     }
   ]
 }

@@ -110,6 +110,14 @@ export const Header: React.FC<HeaderProps> = ({
             >
               Verification Policy
             </button>
+            <a
+              href="./artists/vijay-kiyawat/index.html"
+              className="btn btn-outline btn-sm"
+              aria-label="View Vijay Kiyawat Master Artist Showcase"
+              style={{ borderColor: 'var(--accent, #b45309)', color: 'var(--accent, #b45309)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+            >
+              Vijay Kiyawat Showcase &nearr;
+            </a>
           </div>
         </div>
       </div>
