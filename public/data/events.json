@@ -2,7 +2,7 @@
   "metadata": {
     "appName": "Art Gallery Live",
     "version": "1.2.0",
-    "lastSuccessfullyUpdated": "2026-11-07T12:05:41.221Z",
+    "lastSuccessfullyUpdated": "2026-11-08T12:26:28.050Z",
     "totalEvents": 17,
     "currentEvents": 10,
     "upcomingEvents": 5,
@@ -45,11 +45,11 @@
         "organiser",
         "timing"
       ],
-      "lastCheckedAt": "2026-11-07T12:05:41.220Z",
+      "lastCheckedAt": "2026-11-08T12:26:28.047Z",
       "lastVerifiedAt": "2026-10-25T17:45:00+05:30",
       "firstSeenAt": "2026-10-24T00:00:00+05:30",
       "lastUpdatedAt": "2026-10-25T13:55:00+05:30",
-      "dataFreshness": "fresh",
+      "dataFreshness": "stale",
       "organiser": "Chemould Prescott Road",
       "eventStatus": "happening-now"
     },
@@ -86,11 +86,11 @@
         "organiser",
         "timing"
       ],
-      "lastCheckedAt": "2026-11-07T12:05:41.220Z",
+      "lastCheckedAt": "2026-11-08T12:26:28.047Z",
       "lastVerifiedAt": "2026-10-25T17:45:00+05:30",
       "firstSeenAt": "2026-10-24T00:00:00+05:30",
       "lastUpdatedAt": "2026-10-25T13:55:00+05:30",
-      "dataFreshness": "fresh",
+      "dataFreshness": "stale",
       "organiser": "Vida Heydari Contemporary",
       "eventStatus": "happening-now"
     },
@@ -126,11 +126,11 @@
         "admissionFee",
         "organiser"
       ],
-      "lastCheckedAt": "2026-11-07T12:05:41.220Z",
+      "lastCheckedAt": "2026-11-08T12:26:28.047Z",
       "lastVerifiedAt": "2026-10-25T17:45:00+05:30",
       "firstSeenAt": "2026-10-25T13:55:00+05:30",
       "lastUpdatedAt": "2026-10-25T13:55:00+05:30",
-      "dataFreshness": "fresh",
+      "dataFreshness": "stale",
       "organiser": "Vida Heydari Contemporary",
       "eventStatus": "upcoming"
     },
@@ -167,11 +167,11 @@
         "organiser",
         "timing"
       ],
-      "lastCheckedAt": "2026-11-07T12:05:41.220Z",
+      "lastCheckedAt": "2026-11-08T12:26:28.047Z",
       "lastVerifiedAt": "2026-10-25T17:45:00+05:30",
       "firstSeenAt": "2026-10-25T13:30:00+05:30",
       "lastUpdatedAt": "2026-10-25T13:55:00+05:30",
-      "dataFreshness": "fresh",
+      "dataFreshness": "stale",
       "organiser": "TARQ",
       "eventStatus": "happening-now"
     },
@@ -207,11 +207,11 @@
         "admissionFee",
         "organiser"
       ],
-      "lastCheckedAt": "2026-11-07T12:05:41.220Z",
+      "lastCheckedAt": "2026-11-08T12:26:28.047Z",
       "lastVerifiedAt": "2026-10-25T17:45:00+05:30",
       "firstSeenAt": "2026-10-25T13:55:00+05:30",
       "lastUpdatedAt": "2026-10-25T13:55:00+05:30",
-      "dataFreshness": "fresh",
+      "dataFreshness": "stale",
       "organiser": "Tao Art Gallery",
       "eventStatus": "happening-now"
     },
@@ -247,11 +247,11 @@
         "admissionFee",
         "organiser"
       ],
-      "lastCheckedAt": "2026-11-07T12:05:41.220Z",
+      "lastCheckedAt": "2026-11-08T12:26:28.048Z",
       "lastVerifiedAt": "2026-10-25T17:45:00+05:30",
       "firstSeenAt": "2026-10-25T13:55:00+05:30",
       "lastUpdatedAt": "2026-10-25T13:55:00+05:30",
-      "dataFreshness": "fresh",
+      "dataFreshness": "stale",
       "organiser": "Project 88",
       "eventStatus": "past"
     },
@@ -287,11 +287,11 @@
         "admissionFee",
         "organiser"
       ],
-      "lastCheckedAt": "2026-11-07T12:05:41.220Z",
+      "lastCheckedAt": "2026-11-08T12:26:28.048Z",
       "lastVerifiedAt": "2026-10-25T17:45:00+05:30",
       "firstSeenAt": "2026-10-25T13:55:00+05:30",
       "lastUpdatedAt": "2026-10-25T13:55:00+05:30",
-      "dataFreshness": "fresh",
+      "dataFreshness": "stale",
       "organiser": "Akara Modern",
       "eventStatus": "past"
     },
@@ -328,11 +328,11 @@
         "organiser",
         "timing"
       ],
-      "lastCheckedAt": "2026-11-07T12:05:41.220Z",
+      "lastCheckedAt": "2026-11-08T12:26:28.048Z",
       "lastVerifiedAt": "2026-10-25T17:45:00+05:30",
       "firstSeenAt": "2026-10-25T13:30:00+05:30",
       "lastUpdatedAt": "2026-10-25T13:55:00+05:30",
-      "dataFreshness": "fresh",
+      "dataFreshness": "stale",
       "organiser": "Jehangir Nicholson Art Foundation & CSMVS",
       "eventStatus": "happening-now"
     },
@@ -370,11 +370,11 @@
         "bookingUrl",
         "organiser"
       ],
-      "lastCheckedAt": "2026-11-07T12:05:41.221Z",
+      "lastCheckedAt": "2026-11-08T12:26:28.048Z",
       "lastVerifiedAt": "2026-10-25T17:45:00+05:30",
       "firstSeenAt": "2026-06-01T00:00:00+05:30",
       "lastUpdatedAt": "2026-10-25T13:55:00+05:30",
-      "dataFreshness": "fresh",
+      "dataFreshness": "stale",
       "organiser": "NMACC Art House",
       "eventStatus": "happening-now"
     },
@@ -410,11 +410,11 @@
         "admissionFee",
         "organiser"
       ],
-      "lastCheckedAt": "2026-11-07T12:05:41.221Z",
+      "lastCheckedAt": "2026-11-08T12:26:28.049Z",
       "lastVerifiedAt": "2026-10-25T17:45:00+05:30",
       "firstSeenAt": "2026-10-25T13:30:00+05:30",
       "lastUpdatedAt": "2026-10-25T13:55:00+05:30",
-      "dataFreshness": "fresh",
+      "dataFreshness": "stale",
       "organiser": "Mumbai Gallery Association",
       "eventStatus": "upcoming"
     },
@@ -450,11 +450,11 @@
         "admissionFee",
         "organiser"
       ],
-      "lastCheckedAt": "2026-11-07T12:05:41.221Z",
+      "lastCheckedAt": "2026-11-08T12:26:28.049Z",
       "lastVerifiedAt": "2026-10-25T17:45:00+05:30",
       "firstSeenAt": "2026-10-25T13:30:00+05:30",
       "lastUpdatedAt": "2026-10-25T13:55:00+05:30",
-      "dataFreshness": "fresh",
+      "dataFreshness": "stale",
       "organiser": "Kala Ghoda Association",
       "eventStatus": "upcoming"
     },
@@ -492,11 +492,11 @@
         "bookingUrl",
         "organiser"
       ],
-      "lastCheckedAt": "2026-11-07T12:05:41.221Z",
+      "lastCheckedAt": "2026-11-08T12:26:28.049Z",
       "lastVerifiedAt": "2026-10-25T17:45:00+05:30",
       "firstSeenAt": "2026-10-25T13:30:00+05:30",
       "lastUpdatedAt": "2026-10-25T13:55:00+05:30",
-      "dataFreshness": "fresh",
+      "dataFreshness": "stale",
       "organiser": "India Art Fair",
       "eventStatus": "upcoming"
     },
@@ -532,11 +532,11 @@
         "admissionFee",
         "organiser"
       ],
-      "lastCheckedAt": "2026-11-07T12:05:41.221Z",
+      "lastCheckedAt": "2026-11-08T12:26:28.049Z",
       "lastVerifiedAt": "2026-10-25T17:45:00+05:30",
       "firstSeenAt": "2026-09-09T00:00:00+05:30",
       "lastUpdatedAt": "2026-10-25T13:55:00+05:30",
-      "dataFreshness": "fresh",
+      "dataFreshness": "stale",
       "organiser": "Kiran Nadar Museum of Art",
       "eventStatus": "happening-now"
     },
@@ -572,11 +572,11 @@
         "admissionFee",
         "organiser"
       ],
-      "lastCheckedAt": "2026-11-07T12:05:41.221Z",
+      "lastCheckedAt": "2026-11-08T12:26:28.049Z",
       "lastVerifiedAt": "2026-10-25T17:45:00+05:30",
       "firstSeenAt": "2026-09-09T00:00:00+05:30",
       "lastUpdatedAt": "2026-10-25T13:55:00+05:30",
-      "dataFreshness": "fresh",
+      "dataFreshness": "stale",
       "organiser": "Kiran Nadar Museum of Art",
       "eventStatus": "happening-now"
     },
@@ -612,11 +612,11 @@
         "admissionFee",
         "organiser"
       ],
-      "lastCheckedAt": "2026-11-07T12:05:41.221Z",
+      "lastCheckedAt": "2026-11-08T12:26:28.050Z",
       "lastVerifiedAt": "2026-10-25T17:45:00+05:30",
       "firstSeenAt": "2026-07-25T00:00:00+05:30",
       "lastUpdatedAt": "2026-10-25T13:55:00+05:30",
-      "dataFreshness": "fresh",
+      "dataFreshness": "stale",
       "organiser": "Museum of Art & Photography (MAP)",
       "eventStatus": "happening-now"
     },
@@ -654,11 +654,11 @@
         "bookingUrl",
         "organiser"
       ],
-      "lastCheckedAt": "2026-11-07T12:05:41.221Z",
+      "lastCheckedAt": "2026-11-08T12:26:28.050Z",
       "lastVerifiedAt": "2026-10-25T17:45:00+05:30",
       "firstSeenAt": "2026-10-01T00:00:00+01:00",
       "lastUpdatedAt": "2026-10-25T13:55:00+05:30",
-      "dataFreshness": "fresh",
+      "dataFreshness": "stale",
       "organiser": "Tate Modern",
       "eventStatus": "happening-now"
     },
@@ -696,11 +696,11 @@
         "bookingUrl",
         "organiser"
       ],
-      "lastCheckedAt": "2026-11-07T12:05:41.221Z",
+      "lastCheckedAt": "2026-11-08T12:26:28.050Z",
       "lastVerifiedAt": "2026-10-25T17:45:00+05:30",
       "firstSeenAt": "2026-10-25T13:30:00+05:30",
       "lastUpdatedAt": "2026-10-25T13:55:00+05:30",
-      "dataFreshness": "fresh",
+      "dataFreshness": "stale",
       "organiser": "Tate Britain",
       "eventStatus": "upcoming"
     }
@@ -723,8 +723,8 @@
       "healthStatus": "healthy",
       "httpStatus": 200,
       "consecutiveFailures": 0,
-      "lastCheckedTime": "2026-11-07T12:05:40.891Z",
-      "lastSuccessTime": "2026-11-07T12:05:40.891Z",
+      "lastCheckedTime": "2026-11-08T12:26:28.032Z",
+      "lastSuccessTime": "2026-11-08T12:26:28.032Z",
       "knownLimitations": "Closed Sundays; focuses on contemporary visual arts in Koregaon Park",
       "refreshFrequency": "Daily"
     },
@@ -745,8 +745,8 @@
       "healthStatus": "healthy",
       "httpStatus": 200,
       "consecutiveFailures": 0,
-      "lastCheckedTime": "2026-11-07T12:05:40.891Z",
-      "lastSuccessTime": "2026-11-07T12:05:40.891Z",
+      "lastCheckedTime": "2026-11-08T12:26:28.032Z",
+      "lastSuccessTime": "2026-11-08T12:26:28.032Z",
       "knownLimitations": "Closed Thursdays; rotational special exhibitions and weekend workshops",
       "refreshFrequency": "Daily"
     },
@@ -767,8 +767,8 @@
       "healthStatus": "healthy",
       "httpStatus": 200,
       "consecutiveFailures": 0,
-      "lastCheckedTime": "2026-11-07T12:05:40.891Z",
-      "lastSuccessTime": "2026-11-07T12:05:40.891Z",
+      "lastCheckedTime": "2026-11-08T12:26:28.032Z",
+      "lastSuccessTime": "2026-11-08T12:26:28.032Z",
       "knownLimitations": "Closed Sundays; individual exhibitions run 4–6 weeks",
       "refreshFrequency": "Daily"
     },
@@ -789,8 +789,8 @@
       "healthStatus": "healthy",
       "httpStatus": 200,
       "consecutiveFailures": 0,
-      "lastCheckedTime": "2026-11-07T12:05:40.891Z",
-      "lastSuccessTime": "2026-11-07T12:05:40.891Z",
+      "lastCheckedTime": "2026-11-08T12:26:28.032Z",
+      "lastSuccessTime": "2026-11-08T12:26:28.032Z",
       "knownLimitations": "Tuesday to Saturday schedule; solo contemporary presentations",
       "refreshFrequency": "Daily"
     },
@@ -811,8 +811,8 @@
       "healthStatus": "healthy",
       "httpStatus": 200,
       "consecutiveFailures": 0,
-      "lastCheckedTime": "2026-11-07T12:05:40.891Z",
-      "lastSuccessTime": "2026-11-07T12:05:40.891Z",
+      "lastCheckedTime": "2026-11-08T12:26:28.032Z",
+      "lastSuccessTime": "2026-11-08T12:26:28.032Z",
       "knownLimitations": "Worli gallery space; rotating solo and curated exhibitions",
       "refreshFrequency": "Daily"
     },
@@ -833,8 +833,8 @@
       "healthStatus": "healthy",
       "httpStatus": 200,
       "consecutiveFailures": 0,
-      "lastCheckedTime": "2026-11-07T12:05:40.891Z",
-      "lastSuccessTime": "2026-11-07T12:05:40.891Z",
+      "lastCheckedTime": "2026-11-08T12:26:28.032Z",
+      "lastSuccessTime": "2026-11-08T12:26:28.032Z",
       "knownLimitations": "Colaba gallery space; Tuesday to Saturday opening hours",
       "refreshFrequency": "Daily"
     },
@@ -855,8 +855,8 @@
       "healthStatus": "healthy",
       "httpStatus": 200,
       "consecutiveFailures": 0,
-      "lastCheckedTime": "2026-11-07T12:05:40.891Z",
-      "lastSuccessTime": "2026-11-07T12:05:40.891Z",
+      "lastCheckedTime": "2026-11-08T12:26:28.032Z",
+      "lastSuccessTime": "2026-11-08T12:26:28.032Z",
       "knownLimitations": "Colaba historical chambers; modern masters and contemporary art",
       "refreshFrequency": "Daily"
     },
@@ -876,8 +876,8 @@
       "healthStatus": "healthy",
       "httpStatus": 200,
       "consecutiveFailures": 0,
-      "lastCheckedTime": "2026-11-07T12:05:40.891Z",
-      "lastSuccessTime": "2026-11-07T12:05:40.891Z",
+      "lastCheckedTime": "2026-11-08T12:26:28.032Z",
+      "lastSuccessTime": "2026-11-08T12:26:28.032Z",
       "knownLimitations": "Requires standard CSMVS Museum ticket for entry",
       "refreshFrequency": "Weekly"
     },
@@ -897,8 +897,8 @@
       "healthStatus": "healthy",
       "httpStatus": 200,
       "consecutiveFailures": 0,
-      "lastCheckedTime": "2026-11-07T12:05:40.891Z",
-      "lastSuccessTime": "2026-11-07T12:05:40.891Z",
+      "lastCheckedTime": "2026-11-08T12:26:28.032Z",
+      "lastSuccessTime": "2026-11-08T12:26:28.032Z",
       "knownLimitations": "Dedicated visual arts gallery; advance ticketing applies",
       "refreshFrequency": "Weekly"
     },
@@ -919,8 +919,8 @@
       "healthStatus": "healthy",
       "httpStatus": 200,
       "consecutiveFailures": 0,
-      "lastCheckedTime": "2026-11-07T12:05:40.891Z",
-      "lastSuccessTime": "2026-11-07T12:05:40.891Z",
+      "lastCheckedTime": "2026-11-08T12:26:28.032Z",
+      "lastSuccessTime": "2026-11-08T12:26:28.032Z",
       "knownLimitations": "Annual citywide event, next scheduled edition January 14–17, 2027",
       "refreshFrequency": "Monthly"
     },
@@ -942,8 +942,8 @@
       "healthStatus": "healthy",
       "httpStatus": 200,
       "consecutiveFailures": 0,
-      "lastCheckedTime": "2026-11-07T12:05:40.891Z",
-      "lastSuccessTime": "2026-11-07T12:05:40.891Z",
+      "lastCheckedTime": "2026-11-08T12:26:28.032Z",
+      "lastSuccessTime": "2026-11-08T12:26:28.032Z",
       "knownLimitations": "Annual public cultural festival (30 Jan – 7 Feb 2027)",
       "refreshFrequency": "Monthly"
     },
@@ -963,8 +963,8 @@
       "healthStatus": "healthy",
       "httpStatus": 200,
       "consecutiveFailures": 0,
-      "lastCheckedTime": "2026-11-07T12:05:40.891Z",
-      "lastSuccessTime": "2026-11-07T12:05:40.891Z",
+      "lastCheckedTime": "2026-11-08T12:26:28.032Z",
+      "lastSuccessTime": "2026-11-08T12:26:28.032Z",
       "knownLimitations": "Saket and Noida campuses; admission is always free",
       "refreshFrequency": "Daily"
     },
@@ -984,8 +984,8 @@
       "healthStatus": "healthy",
       "httpStatus": 200,
       "consecutiveFailures": 0,
-      "lastCheckedTime": "2026-11-07T12:05:40.891Z",
-      "lastSuccessTime": "2026-11-07T12:05:40.891Z",
+      "lastCheckedTime": "2026-11-08T12:26:28.032Z",
+      "lastSuccessTime": "2026-11-08T12:26:28.032Z",
       "knownLimitations": "Annual leading modern & contemporary art fair (4–7 Feb 2027)",
       "refreshFrequency": "Weekly"
     },
@@ -1005,8 +1005,8 @@
       "healthStatus": "healthy",
       "httpStatus": 200,
       "consecutiveFailures": 0,
-      "lastCheckedTime": "2026-11-07T12:05:40.891Z",
-      "lastSuccessTime": "2026-11-07T12:05:40.891Z",
+      "lastCheckedTime": "2026-11-08T12:26:28.032Z",
+      "lastSuccessTime": "2026-11-08T12:26:28.032Z",
       "knownLimitations": "Closed Mondays; curated special exhibitions require ₹150 ticket",
       "refreshFrequency": "Daily"
     },
@@ -1026,8 +1026,8 @@
       "healthStatus": "healthy",
       "httpStatus": 200,
       "consecutiveFailures": 0,
-      "lastCheckedTime": "2026-11-07T12:05:40.891Z",
-      "lastSuccessTime": "2026-11-07T12:05:40.891Z",
+      "lastCheckedTime": "2026-11-08T12:26:28.032Z",
+      "lastSuccessTime": "2026-11-08T12:26:28.032Z",
       "knownLimitations": "Permanent collection free; headline temporary exhibitions ticketed",
       "refreshFrequency": "Daily"
     },
@@ -1047,8 +1047,8 @@
       "healthStatus": "healthy",
       "httpStatus": 200,
       "consecutiveFailures": 0,
-      "lastCheckedTime": "2026-11-07T12:05:40.891Z",
-      "lastSuccessTime": "2026-11-07T12:05:40.891Z",
+      "lastCheckedTime": "2026-11-08T12:26:28.032Z",
+      "lastSuccessTime": "2026-11-08T12:26:28.032Z",
       "knownLimitations": "Weekly rotating shows; online calendar under update. Events held in review queue.",
       "refreshFrequency": "Daily"
     }
